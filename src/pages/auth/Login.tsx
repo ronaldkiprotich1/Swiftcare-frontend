@@ -1,4 +1,3 @@
-// src/pages/auth/Login.tsx
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -34,10 +33,19 @@ const Login = () => {
       });
 
       const data = await res.json();
+
       if (res.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('role', data.role);
-        navigate('/dashboard');
+
+        // Redirect based on role
+        if (data.role === 'patient') {
+          navigate('/patient/dashboard');
+        } else if (data.role === 'admin') {
+          navigate('/admin/dashboard');
+        } else {
+          navigate('/dashboard');
+        }
       } else {
         alert(data.error || 'Login failed');
       }

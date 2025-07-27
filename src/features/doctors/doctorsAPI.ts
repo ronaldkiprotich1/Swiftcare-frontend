@@ -1,74 +1,59 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { ApiDomain } from "../../utils/ApiDomain";
-import type { RootState } from "../../app/store";
+import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export type TDoctor = {
-  id: number;
-  name: string;
+  userId: number;
+  firstName: string;
+  lastName: string;
   email: string;
+  contactPhone: string;
+  address: string;
   specialization: string;
-  image_url?: string;
+  availableDays: string[];
 };
 
 export const doctorsAPI = createApi({
-  reducerPath: "doctorsAPI",
-  baseQuery: fetchBaseQuery({
-    baseUrl: ApiDomain,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).user.token;
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
-      }
-      headers.set("Content-Type", "application/json");
-      return headers;
-    },
-  }),
-  tagTypes: ["Doctor"],
-
+  reducerPath: 'doctorsAPI',
+  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:3000/doctors' }),
+  tagTypes: ['Doctors'],
   endpoints: (builder) => ({
-    // GET /doctors
     getDoctors: builder.query<TDoctor[], void>({
-      query: () => "/doctors",
-      providesTags: ["Doctor"],
+      query: () => '/',
+      providesTags: ['Doctors'],
     }),
 
-    // GET /doctors/:id
     getDoctorById: builder.query<TDoctor, number>({
-      query: (id) => `/doctors/${id}`,
+      query: (id) => `/${id}`,
+      providesTags: (_, __, id) => [{ type: 'Doctors', id }],
     }),
 
-    // POST /doctors
     createDoctor: builder.mutation<TDoctor, Partial<TDoctor>>({
-      query: (newDoctor) => ({
-        url: "/doctors",
-        method: "POST",
-        body: newDoctor,
+      query: (doctor) => ({
+        url: '/',
+        method: 'POST',
+        body: doctor,
       }),
-      invalidatesTags: ["Doctor"],
+      invalidatesTags: ['Doctors'],
     }),
 
-    // PUT /doctors/:id
-    updateDoctor: builder.mutation<TDoctor, Partial<TDoctor> & { id: number }>({
-      query: ({ id, ...rest }) => ({
-        url: `/doctors/${id}`,
-        method: "PUT",
-        body: rest,
+    updateDoctor: builder.mutation<TDoctor, { id: number; data: Partial<TDoctor> }>({
+      query: ({ id, data }) => ({
+        url: `/${id}`,
+        method: 'PUT',
+        body: data,
       }),
-      invalidatesTags: ["Doctor"],
+      invalidatesTags: (_, __, { id }) => [{ type: 'Doctors', id }],
     }),
 
-    // DELETE /doctors/:id
-    deleteDoctor: builder.mutation<{ message: string }, number>({
+    deleteDoctor: builder.mutation<{ success: boolean }, number>({
       query: (id) => ({
-        url: `/doctors/${id}`,
-        method: "DELETE",
+        url: `/${id}`,
+        method: 'DELETE',
       }),
-      invalidatesTags: ["Doctor"],
+      invalidatesTags: (_, __, id) => [{ type: 'Doctors', id }],
     }),
   }),
 });
 
-// Export hooks
 export const {
   useGetDoctorsQuery,
   useGetDoctorByIdQuery,

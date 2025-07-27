@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Outlet } from "react-router";
-import Navbar from "../../components/nav/Navbar";
-import Footer from "../../components/footer/Footer";
+// import Navbar from "../../components/nav/Navbar";
+// import Footer from "../../components/footer/Footer";
 import { FaBars } from "react-icons/fa";
 import { IoCloseSharp } from "react-icons/io5";
 import PatientDrawer from "./aside/PatientDrawer";
@@ -16,7 +16,7 @@ const PatientDashboard = () => {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Top Navbar */}
-      <Navbar />
+     
 
       {/* Dashboard Section */}
       <div className="flex flex-1">
@@ -62,7 +62,7 @@ const PatientDashboard = () => {
       </div>
 
       {/* Footer */}
-      <Footer />
+      {/* <Footer /> */}
     </div>
   );
 };

@@ -1,4 +1,3 @@
-// src/App.tsx
 import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/nav/Navbar";
 import Footer from "./components/footer/Footer";
@@ -10,6 +9,8 @@ import Register from "./pages/auth/Register";
 import VerifyUser from "./pages/auth/VerifyUser";
 import PaymentSuccess from "./pages/payment/PaymentSuccess";
 import PaymentCancelled from "./pages/payment/PaymentCancelled";
+import PatientDashboard from "./dashboard/patientDashboard/PatientDashboard";
+import PatientComplaints from "./dashboard/patientDashboard/main/complaints/PatientComplaints";
 
 function App() {
   return (
@@ -24,6 +25,12 @@ function App() {
         <Route path="/verify" element={<VerifyUser />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/cancelled" element={<PaymentCancelled />} />
+
+        {/*  Patient dashboard with nested routes */}
+        <Route path="/patient/dashboard/*" element={<PatientDashboard />}>
+          <Route path="complaint" element={<PatientComplaints />} />
+          
+        </Route>
       </Routes>
       <Footer />
     </div>

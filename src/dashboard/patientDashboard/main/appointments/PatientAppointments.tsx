@@ -1,9 +1,9 @@
 // import { useState } from "react";
 // import { useSelector } from "react-redux";
 // import type { RootState } from "../../../../app/store";
-// import { appointmentsAPI, type TDetailedAppointment } from "../../../../reducers/appointments/appointmentsAPI";
-// import { paymentsAPI } from "../../../../reducers/payments/paymentsAPI";
-// import { prescriptionsAPI } from "../../../../reducers/prescriptions/prescriptionsAPI";
+// import { appointmentsAPI, type TDetailedAppointment } from "../../../../features/appointments/";
+// import { paymentsAPI } from "../../../../features/payments/paymentAPI";
+// import { prescriptionsAPI } from "../../../../features/prescriptions/prescriptionAPI";
 // import { Calendar, Stethoscope, Clock, CreditCard, XCircle, Plus, ArrowRight, Loader, Shield, Receipt} from "lucide-react";
 // import { toast } from "sonner";
 // import CreateAppointment from "./CreateAppointment";

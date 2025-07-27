@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 
 // Dots loader animation
 const DotsLoader = () => (
-  <div className="flex space-x-1">
+  <div className="flex items-center justify-center space-x-1 h-full">
     {[0, 1, 2].map((i) => (
       <motion.span
         key={i}
@@ -115,13 +115,13 @@ const Register = () => {
 
         <button
           type="submit"
-          className="btn btn-primary w-full mt-6 h-12 text-lg tracking-wide font-semibold"
+          className="btn btn-primary w-full mt-6 h-12 text-lg tracking-wide font-semibold flex items-center justify-center"
           disabled={loading}
         >
           {loading ? <DotsLoader /> : 'Register'}
         </button>
 
-        <p className="mt-6 text-sm text-center text-gray-600">
+        <p className="mt-6 t ext-sm text-center text-gray-600">
           Already have an account?{' '}
           <a href="/login" className="text-blue-600 font-medium hover:underline">Login</a>
         </p>
@@ -131,3 +131,4 @@ const Register = () => {
 };
 
 export default Register;
+       

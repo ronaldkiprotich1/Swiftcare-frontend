@@ -1,59 +1,95 @@
-// src/reducers/users/usersAPI.ts
+// src/features/users/usersAPI.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { ApiDomain } from '../../utils/ApiDomain';
 import type { RootState } from '../../app/store';
 
+export type UserRole = 'user' | 'admin' | 'doctor';
+
 export type TUser = {
-  id: number;
+  userId: number;
   firstName: string;
   lastName: string;
   email: string;
+  contactPhone?: string;
+  address?: string;
+  role: UserRole;
+  isVerified: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type NewUser = Omit<TUser, 'userId' | 'isVerified' | 'createdAt' | 'updatedAt'> & {
   password: string;
-  role: string;
-  isVerified: string;
-  image_url?: string;
+};
+
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type LoginResponse = {
+  token: string;
+  role: UserRole;
+  user: Pick<TUser, 'userId' | 'firstName' | 'lastName' | 'email'>;
 };
 
 export const usersAPI = createApi({
   reducerPath: 'usersAPI',
   baseQuery: fetchBaseQuery({
-    baseUrl: ApiDomain,
+    baseUrl: ApiDomain + '/auth',
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState)?.user?.token;
-      if (token) headers.set('Authorization', `Bearer ${token}`);
+      const token = (getState() as RootState).user.token;
+      if (token) {
+        headers.set('Authorization', `Bearer ${token}`);
+      }
       headers.set('Content-Type', 'application/json');
       return headers;
     },
   }),
   tagTypes: ['Users'],
   endpoints: (builder) => ({
-    createUsers: builder.mutation<TUser, Partial<TUser>>({
-      query: (newUser) => ({
-        url: '/auth/register',
+    registerUser: builder.mutation<{ message: string }, NewUser>({
+      query: (user) => ({
+        url: '/register',
         method: 'POST',
-        body: newUser,
+        body: user,
       }),
-      invalidatesTags: ['Users'],
     }),
-    verifyUser: builder.mutation<{ message: string }, { email: string; code: string }>({
+
+    loginUser: builder.mutation<LoginResponse, LoginRequest>({
+      query: (credentials) => ({
+        url: '/login',
+        method: 'POST',
+        body: credentials,
+      }),
+    }),
+
+    verifyUser: builder.mutation<
+      { message: string; user: TUser },
+      { email: string; code: string }
+    >({
       query: (data) => ({
-        url: '/auth/verify',
+        url: '/verify',
         method: 'POST',
         body: data,
       }),
     }),
-    getUsers: builder.query<TUser[], void>({
+
+    getAllUsers: builder.query<TUser[], void>({
       query: () => '/users',
       providesTags: ['Users'],
     }),
+
     getUserById: builder.query<TUser, number>({
       query: (id) => `/user/${id}`,
+      providesTags: ['Users'],
     }),
-    updateUser: builder.mutation<TUser, Partial<TUser> & { id: number }>({
-      query: ({ id, ...rest }) => ({
+
+    updateUserById: builder.mutation<TUser, { id: number } & Partial<TUser>>({
+      query: ({ id, ...data }) => ({
         url: `/user/${id}`,
         method: 'PUT',
-        body: rest,
+        body: data,
       }),
       invalidatesTags: ['Users'],
     }),
@@ -61,9 +97,10 @@ export const usersAPI = createApi({
 });
 
 export const {
-  useCreateUsersMutation,
+  useRegisterUserMutation,
+  useLoginUserMutation,
   useVerifyUserMutation,
-  useGetUsersQuery,
+  useGetAllUsersQuery,
   useGetUserByIdQuery,
-  useUpdateUserMutation,
+  useUpdateUserByIdMutation,
 } = usersAPI;
