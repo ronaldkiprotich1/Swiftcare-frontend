@@ -1,8 +1,8 @@
 import { FiUsers, FiPieChart, FiSettings, FiCalendar } from "react-icons/fi";
-import { 
-  FaUserMd, 
-  FaClinicMedical, 
-  FaRegComments, 
+import {
+  FaUserMd,
+  FaClinicMedical,
+  FaRegComments,
   FaUserCog,
   FaChartLine,
   FaFileMedicalAlt
@@ -12,7 +12,7 @@ import { MdOutlineDashboard, MdFeedback } from "react-icons/md";
 export type DrawerData = {
     id: string;
     name: string;
-    icon: React.ComponentType<{ size?: number }>;
+    icon: React.ComponentType<{ size?: number; className?: string }>;
     link: string;
 }
 

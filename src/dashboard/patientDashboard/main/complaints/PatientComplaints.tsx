@@ -1,6 +1,6 @@
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../../app/store";
-import { useGetComplaintsQuery } from "../../../../features/complaints/complaintsAPI";
+import { useGetComplaintsQuery } from "../../../../features/complaint/complaintsAPI";
 import { MessageSquare, Calendar, Plus, XCircle, AlertCircle, Clock, CheckCircle } from "lucide-react";
 import CreateComplaint from "./CreateComplaint";
 

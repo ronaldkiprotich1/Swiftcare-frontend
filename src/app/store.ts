@@ -6,9 +6,9 @@ import { loginAPI } from "../features/login/loginAPI";
 import userSlice from "../features/users/userSlice";
 import { appointmentsAPI } from "../features/appointments/appointmentsAPI";
 import { paymentsAPI } from "../features/payments/paymentAPI";
-import { complaintsAPI } from "../features/complaints/complaintsAPI";
+import { complaintsAPI } from "../features/complaint/complaintsAPI";
 import { prescriptionsAPI } from "../features/prescriptions/prescriptionAPI";
-import { doctorsAPI } from "../features/doctors/doctorsAPI";
+import { doctorsAPI } from "../features/doctor/doctorsAPI";
 import { usersAPI } from "../features/users/userAPI";
 
 const persistConfig = {

@@ -3,7 +3,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../../app/store";
-import { complaintsAPI } from "../../../../features/complaints/complaintsAPI";
+import { complaintsAPI } from "../../../../features/complaint/complaintsAPI";
 import { toast } from "sonner";
 
 type CreateComplaintInputs = {
