@@ -1,5 +1,6 @@
 import { useDeleteDoctorMutation } from "../../../../features/doctors/doctorsAPI";
-import type { TDoctor } from "../../../../features/doctors/doctorsAPI";import { XCircle } from "lucide-react";
+import type { TDoctor } from "../../../../features/doctors/doctorsAPI";
+import { XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 type DeleteDoctorProps = {
@@ -14,7 +15,7 @@ const DeleteDoctor = ({ doctor, refetch }: DeleteDoctorProps) => {
     if (!doctor) return;
 
     try {
-      await deleteDoctor(doctor.userId).unwrap();
+      await deleteDoctor(doctor.user.userId).unwrap(); // ✅ nested user
       toast.success("Doctor deleted successfully");
       refetch();
       (document.getElementById("delete_doctor_modal") as HTMLDialogElement)?.close();
@@ -29,13 +30,11 @@ const DeleteDoctor = ({ doctor, refetch }: DeleteDoctorProps) => {
       <div className="modal-box border border-red-200 bg-red-50">
         <div className="flex flex-col items-center gap-4 text-center">
           <XCircle className="h-12 w-12 text-red-500" />
-          <h3 className="text-lg font-bold text-red-700">
-            Confirm Delete Doctor
-          </h3>
+          <h3 className="text-lg font-bold text-red-700">Confirm Delete Doctor</h3>
           <p className="text-red-600">
             Are you sure you want to delete{" "}
             <span className="font-semibold">
-              Dr. {doctor?.firstName} {doctor?.lastName}
+              Dr. {doctor?.user.firstName} {doctor?.user.lastName}
             </span>
             ?
           </p>

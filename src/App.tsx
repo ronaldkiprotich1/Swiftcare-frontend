@@ -11,6 +11,7 @@ import PaymentSuccess from "./pages/payment/PaymentSuccess";
 import PaymentCancelled from "./pages/payment/PaymentCancelled";
 import PatientDashboard from "./dashboard/patientDashboard/PatientDashboard";
 import PatientComplaints from "./dashboard/patientDashboard/main/complaints/PatientComplaints";
+import AdminDashboard from "./dashboard/adminDashboard/AdminDashboard"; // <- fixed capitalization
 
 function App() {
   return (
@@ -26,11 +27,13 @@ function App() {
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/cancelled" element={<PaymentCancelled />} />
 
-        {/*  Patient dashboard with nested routes */}
+        {/* Patient dashboard with nested route(s) */}
         <Route path="/patient/dashboard/*" element={<PatientDashboard />}>
           <Route path="complaint" element={<PatientComplaints />} />
-          
         </Route>
+
+        {/* Admin dashboard route */}
+        <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
       </Routes>
       <Footer />
     </div>

@@ -1,14 +1,24 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 export type TDoctor = {
-  userId: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  contactPhone: string;
-  address: string;
-  specialization: string;
-  availableDays: string[];
+  user: {
+    userId: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    contactPhone: string;
+    address: string;
+    isVerified: boolean;
+     image_url?: string;
+  };
+  doctor: {
+    doctorId: number;
+    specialization: string;
+    availableDays: string[];
+    rating?: number;      
+    experience?: number;   
+    patients?: number; 
+  };
 };
 
 export const doctorsAPI = createApi({

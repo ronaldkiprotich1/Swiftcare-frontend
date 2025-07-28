@@ -16,6 +16,7 @@ export type TUser = {
   isVerified: boolean;
   createdAt?: string;
   updatedAt?: string;
+    image_url?: string; 
 };
 
 export type NewUser = Omit<TUser, 'userId' | 'isVerified' | 'createdAt' | 'updatedAt'> & {
