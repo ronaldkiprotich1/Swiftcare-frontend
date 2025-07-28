@@ -1,50 +1,90 @@
-// src/features/prescription/prescriptionAPI.ts
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { ApiDomain } from "../../utils/ApiDomain";
+import type { RootState } from "../../app/store";
 
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-export const prescriptionAPI = createApi({
-  reducerPath: 'prescriptionAPI',
-  baseQuery: fetchBaseQuery({ baseUrl: 'http://localhost:8081/api/prescriptions' }),
-  tagTypes: ['Prescription'],
+export type TPrescription = {
+  prescriptionID: number;
+  appointmentID: number;
+  doctorID: number;
+  userID: number;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export const prescriptionsAPI = createApi({
+  reducerPath: "prescriptionsAPI",
+  baseQuery: fetchBaseQuery({
+    baseUrl: ApiDomain,
+    prepareHeaders: (headers, { getState }) => {
+      const token = (getState() as RootState).user.token;
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      headers.set("Content-Type", "application/json");
+      return headers;
+    },
+  }),
+  tagTypes: ["Prescriptions"],
   endpoints: (builder) => ({
-    getAllPrescriptions: builder.query({
-      query: () => '/',
-      providesTags: ['Prescription'],
-    }),
-    getPrescriptionById: builder.query({
-      query: (id: number) => `/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Prescription', id }],
-    }),
-    createPrescription: builder.mutation({
+    // Create
+    createPrescription: builder.mutation<TPrescription, Partial<TPrescription>>({
       query: (newPrescription) => ({
-        url: '/',
-        method: 'POST',
+        url: "/prescription",
+        method: "POST",
         body: newPrescription,
       }),
-      invalidatesTags: ['Prescription'],
+      invalidatesTags: ["Prescriptions"],
     }),
-    updatePrescription: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/${id}`,
-        method: 'PUT',
-        body: data,
-      }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Prescription', id }],
+
+    // Get All
+    getPrescriptions: builder.query<{ prescriptions: TPrescription[] }, void>({
+      query: () => "/prescription",
+      providesTags: ["Prescriptions"],
     }),
-    deletePrescription: builder.mutation({
-      query: (id: number) => ({
-        url: `/${id}`,
-        method: 'DELETE',
+
+    // Get by ID
+    getPrescriptionById: builder.query<{ prescription: TPrescription }, number>({
+      query: (prescriptionID) => `/prescription/${prescriptionID}`,
+      providesTags: ["Prescriptions"],
+    }),
+
+    // Get by Appointment ID
+    getPrescriptionsByAppointmentId: builder.query<{ prescriptions: TPrescription[] }, number>({
+      query: (appointmentID) => `/prescription/appointment/${appointmentID}`,
+      providesTags: ["Prescriptions"],
+    }),
+
+    // Get by Doctor ID
+    getPrescriptionsByDoctorId: builder.query<{ prescriptions: TPrescription[] }, number>({
+      query: (doctorID) => `/prescription/doctor/${doctorID}`,
+      providesTags: ["Prescriptions"],
+    }),
+
+    // Get by User ID
+    getPrescriptionsByUserId: builder.query<{ prescriptions: TPrescription[] }, number>({
+      query: (userID) => `/prescription/user/${userID}`,
+      providesTags: ["Prescriptions"],
+    }),
+
+    // Update
+    updatePrescription: builder.mutation<TPrescription, Partial<TPrescription> & { prescriptionID: number }>({
+      query: (updatedPrescription) => ({
+        url: `/prescription/${updatedPrescription.prescriptionID}`,
+        method: "PUT",
+        body: updatedPrescription,
       }),
-      invalidatesTags: (_result, _error, id) => [{ type: 'Prescription', id }],
+      invalidatesTags: ["Prescriptions"],
+    }),
+
+    // Delete
+    deletePrescription: builder.mutation<{ message: string }, number>({
+      query: (prescriptionID) => ({
+        url: `/prescription/${prescriptionID}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Prescriptions"],
     }),
   }),
 });
-
-export const {
-  useGetAllPrescriptionsQuery,
-  useGetPrescriptionByIdQuery,
-  useCreatePrescriptionMutation,
-  useUpdatePrescriptionMutation,
-  useDeletePrescriptionMutation,
-} = prescriptionAPI;

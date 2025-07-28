@@ -2,34 +2,15 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { ApiDomain } from "../../utils/ApiDomain";
 import type { RootState } from "../../app/store";
 
-export type TAppointment = {
-  appointmentId: number;
-  userId: number;
-  doctorId: number;
-  appointmentDate: string; // e.g., "2025-08-01"
-  timeSlot: string;         // e.g., "10:00 AM - 11:00 AM"
-  status?: string;          // optional: 'scheduled', 'cancelled', etc.
-};
 
-export type TDetailedAppointment = {
-  appointmentId: number;
-  userId: number;
-  doctorId: number;
+export type TAppointment = {
+  appointmentID: number;
+  userID: number;
+  doctorID: number;
   appointmentDate: string;
   timeSlot: string;
-  appointmentStatus: string;
-  totalAmount: string;
-  patient: {
-    name: string;
-    lastName: string;
-    email: string;
-    contactPhone: string;
-  };
-  doctor: {
-    name: string;
-    lastName: string;
-    specialization: string;
-  };
+  totalAmount: number | null;
+  appointmentStatus: "Pending" | "Confirmed";
 };
 
 export const appointmentsAPI = createApi({
@@ -45,57 +26,48 @@ export const appointmentsAPI = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Appointment"],
+  tagTypes: ["Appointments"],
   endpoints: (builder) => ({
-    // GET /appointments
-    getAppointments: builder.query<TAppointment[], void>({
-      query: () => "/appointments",
-      providesTags: ["Appointment"],
-    }),
-    // GET /appointments/detailed - for admin dashboard with patient/doctor info
-    getDetailedAppointments: builder.query<{ data: TDetailedAppointment[] }, void>({
-      query: () => "/appointments/detailed",
-      providesTags: ["Appointment"],
-    }),
-    // GET /appointments/:id
-    getAppointmentById: builder.query<TAppointment, number>({
-      query: (id) => `/appointments/${id}`,
-    }),
-    // POST /appointments
     createAppointment: builder.mutation<TAppointment, Partial<TAppointment>>({
-      query: (appointment) => ({
-        url: "/appointments",
+      query: (newAppointment) => ({
+        url: "/appointment",
         method: "POST",
-        body: appointment,
+        body: newAppointment,
       }),
-      invalidatesTags: ["Appointment"],
+      invalidatesTags: ["Appointments"],
     }),
-    // PUT /appointments/:id
-    updateAppointment: builder.mutation<TAppointment, Partial<TAppointment> & { appointmentId: number }>({
-      query: ({ appointmentId, ...rest }) => ({
-        url: `/appointments/${appointmentId}`,
+    getAppointments: builder.query<{ appointments: TAppointment[] }, void>({
+      query: () => "/appointment",
+      providesTags: ["Appointments"],
+    }),
+    getAppointmentById: builder.query<{ appointment: TAppointment }, number>({
+      query: (appointmentID) => `/appointment/${appointmentID}`,
+      providesTags: ["Appointments"],
+    }),
+    getAppointmentsByUserId: builder.query<{ appointments: TAppointment[] }, number>({
+      query: (userID) => `/appointment/user/${userID}`,
+      providesTags: ["Appointments"],
+    }),
+    getAppointmentsByDoctorId: builder.query<{ appointments: TAppointment[] }, number>({
+      query: (doctorID) => `/appointment/doctor/${doctorID}`,
+      providesTags: ["Appointments"],
+    }),
+    updateAppointment: builder.mutation<TAppointment, Partial<TAppointment> & { appointmentID: number }>({
+      query: (updatedAppointment) => ({
+        url: `/appointment/${updatedAppointment.appointmentID}`,
         method: "PUT",
-        body: rest,
+        body: updatedAppointment,
       }),
-      invalidatesTags: ["Appointment"],
+      invalidatesTags: ["Appointments"],
     }),
-    // DELETE /appointments/:id
     deleteAppointment: builder.mutation<{ message: string }, number>({
-      query: (id) => ({
-        url: `/appointments/${id}`,
+      query: (appointmentID) => ({
+        url: `/appointment/${appointmentID}`,
         method: "DELETE",
       }),
-      invalidatesTags: ["Appointment"],
+      invalidatesTags: ["Appointments"],
     }),
   }),
 });
 
-// Export hooks for React usage
-export const {
-  useGetAppointmentsQuery,
-  useGetDetailedAppointmentsQuery,
-  useGetAppointmentByIdQuery,
-  useCreateAppointmentMutation,
-  useUpdateAppointmentMutation,
-  useDeleteAppointmentMutation,
-} = appointmentsAPI;
+

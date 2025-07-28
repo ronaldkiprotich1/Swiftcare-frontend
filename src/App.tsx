@@ -9,12 +9,19 @@ import Register from "./pages/auth/Register";
 import VerifyUser from "./pages/auth/VerifyUser";
 import PaymentSuccess from "./pages/payment/PaymentSuccess";
 import PaymentCancelled from "./pages/payment/PaymentCancelled";
+
 import PatientDashboard from "./dashboard/patientDashboard/PatientDashboard";
 import PatientComplaints from "./dashboard/patientDashboard/main/complaints/PatientComplaints";
+
 import AdminDashboard from "./dashboard/adminDashboard/AdminDashboard";
-import AdminAppointments from "./dashboard/adminDashboard/main/appointments/AdminAppointments";
 import AdminComplaints from "./dashboard/adminDashboard/main/complaints/AdminComplaints";
 import Users from "./dashboard/adminDashboard/main/users/Users";
+import DoctorDashboard from "./dashboard/doctorDashboard/DoctorDashboard";
+import DoctorAppointments from "./dashboard/doctorDashboard/appointment/DoctorAppointment";
+import DoctorPrescriptions from "./dashboard/doctorDashboard/prescription/Prescription";
+import Profile from "./dashboard/patientDashboard/Profile";
+
+
 
 function App() {
   return (
@@ -38,9 +45,15 @@ function App() {
 
         {/* Admin dashboard with nested routes */}
         <Route path="/admin/dashboard/*" element={<AdminDashboard />}>
-          <Route path="appointments" element={<AdminAppointments />} />
           <Route path="complaints" element={<AdminComplaints />} />
           <Route path="users" element={<Users />} />
+        </Route>
+
+        {/* Doctor dashboard with nested routes */}
+        <Route path="/doctor/dashboard/*" element={<DoctorDashboard />}>
+          <Route path="appointments" element={<DoctorAppointments />} />
+          <Route path="prescriptions" element={<DoctorPrescriptions />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
       </Routes>
       <Footer />

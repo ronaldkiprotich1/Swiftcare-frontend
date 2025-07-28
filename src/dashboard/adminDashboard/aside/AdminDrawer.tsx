@@ -1,40 +1,67 @@
-import { Link } from "react-router-dom"; // Updated import
-import { adminDrawerData } from "./drawerData";
+import { TbBrandBooking } from "react-icons/tb";
+import { MdPayments } from "react-icons/md";
+import { FiUsers } from "react-icons/fi";
+import { FaPrescriptionBottleAlt } from "react-icons/fa";
+import { FaEnvelopeOpenText } from "react-icons/fa6";
+import { FaUserCheck } from "react-icons/fa6";
+import { TbBrandGoogleAnalytics } from "react-icons/tb";
 
-const AdminDrawer = () => {
-    return (
-        <div className="bg-gray-800 h-full flex flex-col">
-            {/* Header with improved styling */}
-            <h2 className="text-2xl font-bold text-white p-6 border-b border-gray-600 bg-gray-700/50">
-                Dashboard Menu
-            </h2>
-            
-            {/* Menu items with better spacing and hover effects */}
-            <ul className="flex-1 overflow-y-auto py-2">
-                {adminDrawerData.map((item) => {
-                    const IconComponent = item.icon; // Create component variable
-                    return (
-                        <li key={item.id} className="px-3 py-1">
-                            <Link
-                                to={item.link}
-                                className="flex items-center gap-4 p-4 rounded-lg text-gray-200 hover:bg-indigo-500/20 hover:text-white transition-all duration-300 group"
-                            >
-                                <div className="text-indigo-300 group-hover:text-indigo-100 transition-colors">
-                                    <IconComponent size={24} />
-                                </div>
-                                <span className="text-lg font-medium">{item.name}</span>
-                            </Link>
-                        </li>
-                    );
-                })}
-            </ul>
+export type DrawerData = {
+    id: string;
+    name: string;
+    icon: React.ComponentType<{ size?: number }>;
+    link: string
+}
+export const adminDrawerData: DrawerData[] = [
 
-            {/* Optional footer */}
-            <div className="p-4 border-t border-gray-700 text-gray-400 text-sm">
-                Admin Panel v1.0
-            </div>
-        </div>
-    );
-};
+    {
+        id: 'appointments',
+        name: 'Appointments',
+        icon: TbBrandBooking,
+        link: 'appointments'
+    },
+    {
+        id: 'payments',
+        name: 'Payments',
+        icon: MdPayments,
+        link: 'payments'
+    },
 
-export default AdminDrawer;
+    {
+        id: 'prescriptions',
+        name: 'Prescriptions',
+        icon: FaPrescriptionBottleAlt,
+        link: 'prescriptions'
+    },
+    {
+        id: 'complaints',
+        name: 'Complaints',
+        icon: FaEnvelopeOpenText,
+        link: 'complaints'
+    },
+    {
+        id: 'doctors',
+        name: 'Doctors',
+        icon: FiUsers,
+        link: 'doctors'
+    },
+
+    {
+        id: 'users',
+        name: 'Users',
+        icon: FiUsers,
+        link: 'users'
+    },
+    {
+        id: 'profile',
+        name: 'Profile',
+        icon: FaUserCheck,
+        link: 'profile'
+    },
+    {
+        id: 'analytics',
+        name: 'Analytics',
+        icon: TbBrandGoogleAnalytics,
+        link: 'analytics'
+    },
+]

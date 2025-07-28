@@ -18,14 +18,15 @@ const AdminDashboard = () => {
       {/* Navbar */}
       <Navbar />
 
-      {/* Content layout wrapper */}
-      <div className="flex flex-1">
+      {/* Main layout */}
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside
           className={`
             bg-gradient-to-b from-teal-700 to-pink-700 text-white w-64 
-            lg:block ${drawerOpen ? "block fixed z-50 h-full" : "hidden"} 
-            lg:static
+            h-full z-50 transition-transform duration-300 ease-in-out
+            ${drawerOpen ? "fixed left-0 top-0" : "hidden"} 
+            lg:static lg:block
           `}
         >
           {/* Close button for mobile */}
@@ -33,6 +34,7 @@ const AdminDashboard = () => {
             <button
               className="absolute top-4 right-4 text-white text-2xl lg:hidden"
               onClick={handleDrawerToggle}
+              aria-label="Close sidebar"
             >
               <IoCloseSharp />
             </button>
@@ -40,23 +42,24 @@ const AdminDashboard = () => {
           </div>
         </aside>
 
-        {/* Main section */}
+        {/* Main content */}
         <div className="flex flex-col flex-1">
           {/* Top bar */}
-          <div className="flex items-center px-4 py-4 bg-gray-900">
+          <div className="flex items-center px-4 py-4 bg-gray-900 lg:hidden">
             <button
-              className="mr-4 text-white text-2xl lg:hidden"
+              className="mr-4 text-white text-2xl"
               onClick={handleDrawerToggle}
+              aria-label="Open sidebar"
             >
               {drawerOpen ? <IoCloseSharp /> : <FaBars />}
             </button>
             <h1 className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-pink-400 text-2xl font-extrabold shadow-md">
-              Welcome to your Admin dashboard
+              Admin Dashboard
             </h1>
           </div>
 
-          {/* Main content */}
-          <main className="flex-1 bg-gradient-to-br from-teal-50 to-pink-50 p-4">
+          {/* Routed content */}
+          <main className="flex-1 bg-gradient-to-br from-teal-50 to-pink-50 p-4 overflow-auto">
             <Outlet />
           </main>
         </div>
