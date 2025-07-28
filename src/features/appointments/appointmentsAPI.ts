@@ -11,6 +11,27 @@ export type TAppointment = {
   status?: string;          // optional: 'scheduled', 'cancelled', etc.
 };
 
+export type TDetailedAppointment = {
+  appointmentId: number;
+  userId: number;
+  doctorId: number;
+  appointmentDate: string;
+  timeSlot: string;
+  appointmentStatus: string;
+  totalAmount: string;
+  patient: {
+    name: string;
+    lastName: string;
+    email: string;
+    contactPhone: string;
+  };
+  doctor: {
+    name: string;
+    lastName: string;
+    specialization: string;
+  };
+};
+
 export const appointmentsAPI = createApi({
   reducerPath: "appointmentsAPI",
   baseQuery: fetchBaseQuery({
@@ -25,19 +46,21 @@ export const appointmentsAPI = createApi({
     },
   }),
   tagTypes: ["Appointment"],
-
   endpoints: (builder) => ({
     // GET /appointments
     getAppointments: builder.query<TAppointment[], void>({
       query: () => "/appointments",
       providesTags: ["Appointment"],
     }),
-
+    // GET /appointments/detailed - for admin dashboard with patient/doctor info
+    getDetailedAppointments: builder.query<{ data: TDetailedAppointment[] }, void>({
+      query: () => "/appointments/detailed",
+      providesTags: ["Appointment"],
+    }),
     // GET /appointments/:id
     getAppointmentById: builder.query<TAppointment, number>({
       query: (id) => `/appointments/${id}`,
     }),
-
     // POST /appointments
     createAppointment: builder.mutation<TAppointment, Partial<TAppointment>>({
       query: (appointment) => ({
@@ -47,7 +70,6 @@ export const appointmentsAPI = createApi({
       }),
       invalidatesTags: ["Appointment"],
     }),
-
     // PUT /appointments/:id
     updateAppointment: builder.mutation<TAppointment, Partial<TAppointment> & { appointmentId: number }>({
       query: ({ appointmentId, ...rest }) => ({
@@ -57,7 +79,6 @@ export const appointmentsAPI = createApi({
       }),
       invalidatesTags: ["Appointment"],
     }),
-
     // DELETE /appointments/:id
     deleteAppointment: builder.mutation<{ message: string }, number>({
       query: (id) => ({
@@ -72,6 +93,7 @@ export const appointmentsAPI = createApi({
 // Export hooks for React usage
 export const {
   useGetAppointmentsQuery,
+  useGetDetailedAppointmentsQuery,
   useGetAppointmentByIdQuery,
   useCreateAppointmentMutation,
   useUpdateAppointmentMutation,

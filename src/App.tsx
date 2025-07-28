@@ -11,13 +11,17 @@ import PaymentSuccess from "./pages/payment/PaymentSuccess";
 import PaymentCancelled from "./pages/payment/PaymentCancelled";
 import PatientDashboard from "./dashboard/patientDashboard/PatientDashboard";
 import PatientComplaints from "./dashboard/patientDashboard/main/complaints/PatientComplaints";
-import AdminDashboard from "./dashboard/adminDashboard/AdminDashboard"; // <- fixed capitalization
+import AdminDashboard from "./dashboard/adminDashboard/AdminDashboard";
+import AdminAppointments from "./dashboard/adminDashboard/main/appointments/AdminAppointments";
+import AdminComplaints from "./dashboard/adminDashboard/main/complaints/AdminComplaints";
+import Users from "./dashboard/adminDashboard/main/users/Users";
 
 function App() {
   return (
     <div className="min-h-screen bg-base-200 text-base-content font-sans">
       <Navbar />
       <Routes>
+        {/* Public routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="/appointment" element={<Appointment />} />
@@ -32,8 +36,12 @@ function App() {
           <Route path="complaint" element={<PatientComplaints />} />
         </Route>
 
-        {/* Admin dashboard route */}
-        <Route path="/admin/dashboard/*" element={<AdminDashboard />} />
+        {/* Admin dashboard with nested routes */}
+        <Route path="/admin/dashboard/*" element={<AdminDashboard />}>
+          <Route path="appointments" element={<AdminAppointments />} />
+          <Route path="complaints" element={<AdminComplaints />} />
+          <Route path="users" element={<Users />} />
+        </Route>
       </Routes>
       <Footer />
     </div>

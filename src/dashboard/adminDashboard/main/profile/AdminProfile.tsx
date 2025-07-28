@@ -1,8 +1,8 @@
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router";
-import { type RootState } from "../../../app/store";
-import { usersAPI } from "../../../features/users/usersAPI";
-import { logout } from "../../../features/login/userSlice";
+import { type RootState } from "../../../../app/store";
+import { usersAPI } from "../../../../features/users/usersAPI";
+import { logout } from "../../../../features/login/userSlice";
 import UpdateProfile from "./UpdateProfile";
 import { Mail,ShieldCheck, CheckCircle, LogOut, Pencil } from "lucide-react";
 

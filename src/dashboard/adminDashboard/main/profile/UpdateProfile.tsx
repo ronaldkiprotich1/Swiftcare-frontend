@@ -1,7 +1,7 @@
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { usersAPI } from "../../../features/users/usersAPI";
+import { usersAPI } from "../../../../features/users/usersAPI";
 import { toast } from "sonner";
 import { useEffect } from "react";
 
