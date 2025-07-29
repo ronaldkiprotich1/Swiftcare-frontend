@@ -1,78 +1,101 @@
-import { Routes, Route } from "react-router-dom";
-import Navbar from "./components/nav/Navbar";
-import Footer from "./components/footer/Footer";
-import AboutPage from "./pages/AboutPage";
-import LandingPage from "./pages/LandingPage";
-import Appointment from "./pages/Appointment";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import VerifyUser from "./pages/auth/VerifyUser";
-import PaymentSuccess from "./pages/payment/PaymentSuccess";
-import PaymentCancelled from "./pages/payment/PaymentCancelled";
-import AdminComplaints from "./dashboard/adminDashboard/complaints/Complaints";
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import './App.css';
+import AboutPage from './pages/AboutPage';
+import LandingPage from './pages/LandingPage';
+import { Toaster } from 'sonner';
+import { useSelector } from 'react-redux';
+import type { RootState } from './app/store';
 
-// // Patient Dashboard
-// import PatientDashboard from "./dashboard/patientDashboard/PatientDashboard";
-// import PatientComplaints from "./dashboard/patientDashboard/main/complaints/PatientComplaints";
+import UserPayments from './dashboard/UserDashboard/payment/Payment';
+import UserComplaints from './dashboard/UserDashboard/complaint/UserComplaint';
+import UserPrescriptions from './dashboard/UserDashboard/prescription/UserPrescription';
+import UserDoctors from './dashboard/UserDashboard/doctor/Doctor';
+import Profile from './dashboard/Profile';
+import Appointments from './dashboard/adminDashboard/appointments/Appointments';
+import Login from './pages/auth/Login';
+import VerifyUser from './pages/auth/VerifyUser';
+import Register from './pages/auth/Register';
+import DoctorPrescriptions from './dashboard/doctorDashboard/prescription/Prescription';
+import { IoAnalytics } from 'react-icons/io5';
+import AdminDoctors from './dashboard/adminDashboard/doctor/AdminDoctor';
+import DoctorAppointments from './dashboard/doctorDashboard/appointment/DoctorAppointment';
+import DoctorDashboard from './dashboard/doctorDashboard/DoctorDashboard';
+import AdminDashboard from './dashboard/adminDashboard/AdminDashboard';
+import UserDashboard from './dashboard/UserDashboard/appointment/UserDashboard';
+import { Users } from 'lucide-react';
+import Payments from './dashboard/adminDashboard/payments/Payments';
+import UserAppointments from './dashboard/UserDashboard/appointment/Appointment';
+import Prescriptions from './dashboard/adminDashboard/prescription/Prescription';
+import Complaints from './dashboard/adminDashboard/complaints/Complaints';
+import DoctorAnalysis from './dashboard/doctorDashboard/analytics/Analysis';
 
-// Admin Dashboard
-import AdminDashboard from "./dashboard/adminDashboard/AdminDashboard";
+const App = () => {
+  const isAdmin = useSelector((state: RootState) => state.user.user?.role === 'admin');
+  const isUser = useSelector((state: RootState) => state.user.user?.role === 'user');
+  const isDoctor = useSelector((state: RootState) => state.user.user?.role === 'doctor');
 
+  const router = createBrowserRouter([
+    { path: '/', element: <LandingPage /> },
+    { path: '/about', element: <AboutPage /> },
+    { path: '/register', element: <Register /> },
+    { path: '/login', element: <Login /> },
+    { path: '/verify', element: <VerifyUser /> },
 
-// Doctor Dashboard
-import DoctorDashboard from "./dashboard/doctorDashboard/DoctorDashboard";
-import DoctorAppointments from "./dashboard/doctorDashboard/appointment/DoctorAppointment";
-import DoctorPrescriptions from "./dashboard/doctorDashboard/prescription/Prescription";
-import Profile from "./dashboard/patientDashboard/Profile";
-import Payments from "./dashboard/adminDashboard/payments/Payments";
-import Prescriptions from "./dashboard/adminDashboard/prescription/Prescription";
-import AdminDoctors from "./dashboard/adminDashboard/doctor/AdminDoctor";
-import { Users } from "lucide-react";
-import { IoAnalytics } from "react-icons/io5";
+    {
+      path: '/user/dashboard',
+      element: isUser ? <UserDashboard /> : <Login />,
+      children: [
+        { path: 'appointments', element: <UserAppointments /> },
+        { path: 'payments', element: <UserPayments /> },
+        { path: 'prescriptions', element: <UserPrescriptions /> },
+        { path: 'complaints', element: <UserComplaints /> },
+        { path: 'doctors', element: <UserDoctors /> },
+        { path: 'profile', element: <Profile /> },
+      ],
+    },
 
+    {
+      path: '/admin/dashboard',
+      element: isAdmin ? <AdminDashboard /> : <Login />,
+      children: [
+        { path: 'appointments', element: <Appointments /> },
+        { path: 'payments', element: <Payments /> },
+        { path: 'prescriptions', element: <Prescriptions /> },
+        { path: 'complaints', element: <Complaints /> },
+        { path: 'doctors', element: <AdminDoctors /> },
+        { path: 'users', element: <Users /> },
+        { path: 'profile', element: <Profile /> },
+        { path: 'analytics', element: <IoAnalytics /> },
+      ],
+    },
 
-function App() {
+    {
+      path: '/doctor/dashboard',
+      element: isDoctor ? <DoctorDashboard /> : <Login />,
+      children: [
+        { path: 'appointments', element: <DoctorAppointments /> },
+        { path: 'prescriptions', element: <DoctorPrescriptions /> },
+        { path: 'profile', element: <Profile /> },
+        { path: 'analytics', element: <DoctorAnalysis /> },
+      ],
+    },
+  ]);
+
   return (
-    <div className="min-h-screen bg-base-200 text-base-content font-sans">
-      <Navbar />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/appointment" element={<Appointment />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify" element={<VerifyUser />} />
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/cancelled" element={<PaymentCancelled />} />
-
-        {/* Patient dashboard with nested routes
-        <Route path="/patient/dashboard/*" element={<PatientDashboard />}>
-          <Route path="complaint" element={<PatientComplaints />} />
-        </Route> */}
-
-        {/* Admin dashboard with full nested routes */}
-        <Route path="/admin/dashboard/*" element={<AdminDashboard />}>
-          <Route path="appointments" element={<DoctorAppointments />} />
-          <Route path="payments" element={<Payments />} />
-          <Route path="prescriptions" element={<Prescriptions />} />
-          <Route path="complaints" element={<AdminComplaints />} />
-          <Route path="doctors" element={<AdminDoctors />} />
-          <Route path="users" element={<Users />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="analytics" element={<IoAnalytics />} />
-        </Route>
-
-        {/* Doctor dashboard with nested routes */}
-        <Route path="/doctor/dashboard/*" element={<DoctorDashboard />}>
-          <Route path="appointments" element={<DoctorAppointments />} />
-          <Route path="prescriptions" element={<DoctorPrescriptions />} />
-          <Route path="profile" element={<Profile />} />
-        </Route>
-      </Routes>
-      <Footer />
-    </div>
+    <>
+      <RouterProvider router={router} />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          classNames: {
+            error: 'bg-red-500 text-white',
+            success: 'bg-green-500 text-white',
+            info: 'bg-blue-500 text-white',
+          },
+        }}
+      />
+    </>
   );
-}
+};
 
 export default App;

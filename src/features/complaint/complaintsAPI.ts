@@ -2,7 +2,6 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { ApiDomain } from "../../utils/ApiDomain";
 import type { RootState } from "../../app/store";
 
-
 export type TComplaint = {
   complaintID: number;
   userID: number;
@@ -71,3 +70,13 @@ export const complaintsAPI = createApi({
   }),
 });
 
+// ✅ EXPORT the RTK Query hooks here
+export const {
+  useCreateComplaintMutation,
+  useGetComplaintsQuery,
+  useGetComplaintByIdQuery,
+  useGetComplaintsByUserIdQuery,
+  useGetComplaintsByAppointmentIdQuery,
+  useUpdateComplaintMutation,
+  useDeleteComplaintMutation,
+} = complaintsAPI;
