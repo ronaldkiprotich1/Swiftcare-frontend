@@ -1,73 +1,75 @@
-import { useEffect } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
 import { appointmentsAPI, type TAppointment } from "../../../features/appointments/appointmentsAPI";
+import { toast } from "sonner";
+import type { RootState } from "../../../app/store";
 
-
-type UpdateAppointmentProps = {
+interface UpdateAppointmentProps {
   appointment: TAppointment | null;
   refetch: () => void;
-};
-
-type UpdateAppointmentInputs = {
-  appointmentID: number;
-  userID: number;
-  doctorID: number;
-  appointmentDate: string;
-  timeSlot: string;
-  totalAmount: number;
-};
-
-const schema = yup.object({
-  appointmentID: yup.number().required(),
-  userID: yup.number().required("User ID is required").positive(),
-  doctorID: yup.number().required("Doctor ID is required").positive(),
-  appointmentDate: yup.string().required("Appointment date is required"),
-  timeSlot: yup.string().required("Time slot is required"),
-  totalAmount: yup.number().positive().required(),
-});
+}
 
 const UpdateAppointment = ({ appointment, refetch }: UpdateAppointmentProps) => {
-  const [updateAppointment, { isLoading }] = appointmentsAPI.useUpdateAppointmentMutation();
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors },
-  } = useForm<UpdateAppointmentInputs>({
-    resolver: yupResolver(schema),
+  const [formData, setFormData] = useState({
+    doctorID: 0,
+    appointmentDate: "",
+    timeSlot: "",
+    totalAmount: 0,
+    appointmentStatus: "Pending" as "Pending" | "Confirmed" | "Completed" | "Cancelled",
+    notes: "",
+    cancellationReason: "",
   });
+
+  const userId = useSelector((state: RootState) => state.user.user?.userId);
+  const [updateAppointment, { isLoading }] = appointmentsAPI.useUpdateAppointmentMutation();
 
   useEffect(() => {
     if (appointment) {
-      setValue("appointmentID", appointment.appointmentID);
-      setValue("userID", appointment.userID);
-      setValue("doctorID", appointment.doctorID);
-      setValue("appointmentDate", appointment.appointmentDate);
-      setValue("timeSlot", appointment.timeSlot);
-      if (appointment.totalAmount) {
-        setValue("totalAmount", appointment.totalAmount);
-      }
-    } else {
-      reset();
+      setFormData({
+        doctorID: appointment.doctorID,
+        appointmentDate: appointment.appointmentDate,
+        timeSlot: appointment.timeSlot,
+        totalAmount: appointment.totalAmount || 0,
+        appointmentStatus: appointment.appointmentStatus,
+        notes: appointment.notes || "",
+        cancellationReason: appointment.cancellationReason || "",
+      });
     }
-  }, [appointment, setValue, reset]);
+  }, [appointment]);
 
-  const onSubmit: SubmitHandler<UpdateAppointmentInputs> = async (data) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!appointment) {
       toast.error("No appointment selected");
       return;
     }
 
+    if (!userId) {
+      toast.error("User not authenticated");
+      return;
+    }
+
+    if (!formData.doctorID || !formData.appointmentDate || !formData.timeSlot) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
     try {
-      await updateAppointment({ ...data, appointmentID: appointment.appointmentID }).unwrap();
-      toast.success("Appointment updated successfully");
+      await updateAppointment({
+        appointmentID: appointment.appointmentID,
+        userID: userId,
+        doctorID: formData.doctorID,
+        appointmentDate: formData.appointmentDate,
+        timeSlot: formData.timeSlot,
+        totalAmount: formData.totalAmount,
+        appointmentStatus: formData.appointmentStatus,
+        notes: formData.notes || null,
+        cancellationReason: formData.appointmentStatus === "Cancelled" ? formData.cancellationReason : null,
+      }).unwrap();
+
+      toast.success("Appointment updated successfully!");
       refetch();
-      reset();
       (document.getElementById("update_appointment_modal") as HTMLDialogElement)?.close();
     } catch (error) {
       console.error("Error updating appointment:", error);
@@ -75,75 +77,157 @@ const UpdateAppointment = ({ appointment, refetch }: UpdateAppointmentProps) => 
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: name === "doctorID" || name === "totalAmount" ? Number(value) : value
+    }));
+  };
+
+  if (!appointment) return null;
+
   return (
-    <dialog id="update_appointment_modal" className="modal sm:modal-middle">
-      <div className="modal-box bg-gray-600 text-white w-full max-w-xs sm:max-w-lg mx-auto rounded-lg">
-        <h3 className="font-bold text-lg mb-4">Update Appointment</h3>
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <input
-            type="number"
-            {...register("userID")}
-            placeholder="User ID"
-            className="input rounded w-full p-2 focus:ring-2 focus:ring-blue-500 text-lg bg-white text-gray-800"
-          />
-          {errors.userID && <span className="text-sm text-red-700">{errors.userID.message}</span>}
+    <dialog id="update_appointment_modal" className="modal">
+      <div className="modal-box w-11/12 max-w-2xl">
+        <form method="dialog">
+          <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+        </form>
+        
+        <h3 className="font-bold text-lg mb-4">Update Appointment #{appointment.appointmentID}</h3>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold">Doctor ID *</span>
+              </label>
+              <input
+                type="number"
+                name="doctorID"
+                value={formData.doctorID || ""}
+                onChange={handleChange}
+                className="input input-bordered w-full"
+                placeholder="Enter doctor ID"
+                required
+                min="1"
+              />
+            </div>
 
-          <input
-            type="number"
-            {...register("doctorID")}
-            placeholder="Doctor ID"
-            className="input rounded w-full p-2 focus:ring-2 focus:ring-blue-500 text-lg bg-white text-gray-800"
-          />
-          {errors.doctorID && <span className="text-sm text-red-700">{errors.doctorID.message}</span>}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold">Appointment Date *</span>
+              </label>
+              <input
+                type="date"
+                name="appointmentDate"
+                value={formData.appointmentDate}
+                onChange={handleChange}
+                className="input input-bordered w-full"
+                required
+              />
+            </div>
 
-          <input
-            type="date"
-            {...register("appointmentDate")}
-            className="input rounded w-full p-2 focus:ring-2 focus:ring-blue-500 text-lg bg-white text-gray-800"
-          />
-          {errors.appointmentDate && (
-            <span className="text-sm text-red-700">{errors.appointmentDate.message}</span>
-          )}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold">Time Slot *</span>
+              </label>
+              <input
+                type="time"
+                name="timeSlot"
+                value={formData.timeSlot}
+                onChange={handleChange}
+                className="input input-bordered w-full"
+                required
+              />
+            </div>
 
-          <input
-            type="time"
-            {...register("timeSlot")}
-            className="input rounded w-full p-2 focus:ring-2 focus:ring-blue-500 text-lg bg-white text-gray-800"
-          />
-          {errors.timeSlot && (
-            <span className="text-sm text-red-700">{errors.timeSlot.message}</span>
-          )}
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold">Total Amount</span>
+              </label>
+              <input
+                type="number"
+                name="totalAmount"
+                value={formData.totalAmount || ""}
+                onChange={handleChange}
+                className="input input-bordered w-full"
+                placeholder="Enter amount"
+                min="0"
+                step="0.01"
+              />
+            </div>
 
-          <input
-            type="number"
-            step="0.01"
-            {...register("totalAmount")}
-            placeholder="Total Amount"
-            className="input rounded w-full p-2 focus:ring-2 focus:ring-blue-500 text-lg bg-white text-gray-800"
-          />
-          {errors.totalAmount && (
-            <span className="text-sm text-red-700">{errors.totalAmount.message}</span>
+            <div className="form-control md:col-span-2">
+              <label className="label">
+                <span className="label-text font-semibold">Status *</span>
+              </label>
+              <select
+                name="appointmentStatus"
+                value={formData.appointmentStatus}
+                onChange={handleChange}
+                className="select select-bordered w-full"
+                required
+              >
+                <option value="Pending">Pending</option>
+                <option value="Confirmed">Confirmed</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-semibold">Notes</span>
+            </label>
+            <textarea
+              name="notes"
+              value={formData.notes}
+              onChange={handleChange}
+              className="textarea textarea-bordered w-full"
+              placeholder="Add any additional notes..."
+              rows={3}
+            />
+          </div>
+
+          {formData.appointmentStatus === "Cancelled" && (
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-semibold">Cancellation Reason</span>
+              </label>
+              <textarea
+                name="cancellationReason"
+                value={formData.cancellationReason}
+                onChange={handleChange}
+                className="textarea textarea-bordered w-full"
+                placeholder="Please provide a reason for cancellation..."
+                rows={2}
+              />
+            </div>
           )}
 
           <div className="modal-action">
-            <button type="submit" className="btn btn-primary" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <span className="loading loading-bars loading-xl" /> Updating...
-                </>
-              ) : (
-                "Update"
-              )}
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => (document.getElementById("update_appointment_modal") as HTMLDialogElement)?.close()}
+            >
+              Cancel
             </button>
             <button
-              className="btn"
-              type="button"
-              onClick={() => {
-                (document.getElementById("update_appointment_modal") as HTMLDialogElement)?.close();
-                reset();
-              }}
+              type="submit"
+              className="btn btn-primary"
+              disabled={isLoading}
             >
-              Close
+              {isLoading ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  Updating...
+                </>
+              ) : (
+                "Update Appointment"
+              )}
             </button>
           </div>
         </form>
@@ -153,5 +237,3 @@ const UpdateAppointment = ({ appointment, refetch }: UpdateAppointmentProps) => 
 };
 
 export default UpdateAppointment;
-
-

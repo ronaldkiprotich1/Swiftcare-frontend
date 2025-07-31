@@ -5,22 +5,20 @@ import * as yup from "yup";
 import { toast } from "sonner";
 import { complaintsAPI, type TComplaint } from "../../../features/complaint/complaintsAPI";
 
-
-
 type UpdateComplaintProps = {
   complaint: TComplaint | null;
   refetch: () => void;
 };
 
 type UpdateComplaintInputs = {
-  complaintID: number;
+  complaintId: number;
   subject: string;
   description: string;
   status: string;
 };
 
 const schema = yup.object({
-  complaintID: yup.number().required(),
+  complaintId: yup.number().required(),
   subject: yup.string().required("Subject is required"),
   description: yup.string().required("Description is required"),
   status: yup.string().required("Status is required"),
@@ -41,7 +39,7 @@ const UpdateComplaint = ({ complaint, refetch }: UpdateComplaintProps) => {
 
   useEffect(() => {
     if (complaint) {
-      setValue("complaintID", complaint.complaintID);
+      setValue("complaintId", complaint.complaintId);
       setValue("subject", complaint.subject);
       setValue("description", complaint.description);
       setValue("status", complaint.status);
@@ -57,7 +55,7 @@ const UpdateComplaint = ({ complaint, refetch }: UpdateComplaintProps) => {
     }
 
     try {
-      await updateComplaint({ ...data, complaintID: complaint.complaintID }).unwrap();
+      await updateComplaint({ ...data, complaintId: complaint.complaintId }).unwrap();
       toast.success("Complaint updated successfully");
       refetch();
       reset();
@@ -88,6 +86,20 @@ const UpdateComplaint = ({ complaint, refetch }: UpdateComplaintProps) => {
             className="input rounded w-full p-2 bg-white text-gray-800"
           />
           {errors.description && <span className="text-sm text-red-700">{errors.description.message}</span>}
+
+          <input type="hidden" {...register("complaintId")} />
+
+          <select
+            {...register("status")}
+            className="input rounded w-full p-2 bg-white text-gray-800"
+          >
+            <option value="">Select status</option>
+            <option value="Open">Open</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Resolved">Resolved</option>
+            <option value="Closed">Closed</option>
+          </select>
+          {errors.status && <span className="text-sm text-red-700">{errors.status.message}</span>}
 
           <div className="modal-action">
             <button type="submit" className="btn btn-primary" disabled={isLoading}>

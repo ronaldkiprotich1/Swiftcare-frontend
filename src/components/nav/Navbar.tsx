@@ -1,7 +1,15 @@
 import { Link } from "react-router-dom";
 import { Stethoscope } from "lucide-react";
-
+import { useSelector } from "react-redux";
+import type { RootState } from "../../app/store";
 const Navbar = () => {
+  const userrole = useSelector((state:RootState)=>state.user.user?.role);
+    // const userToken = useSelector((state:RootState)=>state.user.token);
+    const isAdmin = userrole==='admin';
+    const isDoctor = userrole==='doctor';
+
+
+
   return (
     <div className="navbar bg-white px-4 shadow-md sticky top-0 z-50 relative h-16">
       {/* Logo */}
@@ -21,14 +29,12 @@ const Navbar = () => {
           <li>
             <Link to="/" className="hover:text-blue-600">Home</Link>
           </li>
-          <li>
-            <Link to="/appointment" className="hover:text-blue-600">Appointment</Link>
-          </li>
+          {/* Removed Appointment link */}
           <li>
             <Link to="/about" className="hover:text-blue-600">About</Link>
           </li>
           <li>
-            <Link to="/dashboard" className="hover:text-blue-600">Dashboard</Link>
+            <Link to={isAdmin?'/admin/dashboard' :isDoctor? '/doctor/dashboard':'/user/dashboard'} className="hover:text-blue-600">Dashboard</Link>
           </li>
         </ul>
       </div>

@@ -4,27 +4,26 @@ import * as yup from "yup";
 import { toast } from "sonner";
 import { prescriptionsAPI } from "../../../features/prescriptions/prescriptionAPI";
 
-
 type CreatePrescriptionProps = {
   refetch: () => void;
-  appointmentID?: number;
-  doctorID?: number;
-  userID?: number;
+  appointmentId?: number;
+  doctorId?: number;
+  userId?: number;
   notes?: string;
 };
 
 type CreatePrescriptionInputs = {
-  appointmentID: number;
-  doctorID: number;
-  userID: number;
+  appointmentId: number;
+  doctorId: number;
+  userId: number;
   notes: string;
 };
 
 const schema: yup.ObjectSchema<CreatePrescriptionInputs> = yup
   .object({
-    appointmentID: yup.number().required(),
-    doctorID: yup.number().required(),
-    userID: yup.number().required(),
+    appointmentId: yup.number().required(),
+    doctorId: yup.number().required(),
+    userId: yup.number().required(),
     notes: yup.string().required("Notes are required"),
   })
   .required();
@@ -48,7 +47,8 @@ const CreatePrescription = ({ refetch }: CreatePrescriptionProps) => {
       toast.success("Prescription created");
       refetch();
       reset();
-      (document.getElementById("create_prescription_modal") as HTMLDialogElement)?.close();
+      (document.getElementById("create_prescription_modal") as HTMLDialogElement)
+        ?.close();
     } catch (err) {
       console.error(err);
       toast.error("Failed to create prescription");
@@ -62,32 +62,32 @@ const CreatePrescription = ({ refetch }: CreatePrescriptionProps) => {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <input
             type="number"
-            {...register("appointmentID")}
+            {...register("appointmentId")}
             placeholder="Appointment ID"
             className="input bg-white text-gray-800"
           />
-          {errors.appointmentID && (
-            <span className="text-sm text-red-500">{errors.appointmentID.message}</span>
+          {errors.appointmentId && (
+            <span className="text-sm text-red-500">{errors.appointmentId.message}</span>
           )}
 
           <input
             type="number"
-            {...register("doctorID")}
+            {...register("doctorId")}
             placeholder="Doctor ID"
             className="input bg-white text-gray-800"
           />
-          {errors.doctorID && (
-            <span className="text-sm text-red-500">{errors.doctorID.message}</span>
+          {errors.doctorId && (
+            <span className="text-sm text-red-500">{errors.doctorId.message}</span>
           )}
 
           <input
             type="number"
-            {...register("userID")}
+            {...register("userId")}
             placeholder="User ID"
             className="input bg-white text-gray-800"
           />
-          {errors.userID && (
-            <span className="text-sm text-red-500">{errors.userID.message}</span>
+          {errors.userId && (
+            <span className="text-sm text-red-500">{errors.userId.message}</span>
           )}
 
           <textarea
@@ -107,7 +107,8 @@ const CreatePrescription = ({ refetch }: CreatePrescriptionProps) => {
               type="button"
               className="btn"
               onClick={() =>
-                (document.getElementById("create_prescription_modal") as HTMLDialogElement)?.close()
+                (document.getElementById("create_prescription_modal") as HTMLDialogElement)
+                  ?.close()
               }
             >
               Cancel

@@ -1,11 +1,8 @@
-import { FiUsers, FiPieChart, FiSettings, FiCalendar } from "react-icons/fi";
+import { FiUsers,  FiCalendar } from "react-icons/fi";
 import {
   FaUserMd,
-  FaClinicMedical,
-  FaRegComments,
   FaUserCog,
   FaChartLine,
-  FaFileMedicalAlt
 } from "react-icons/fa";
 import { MdOutlineDashboard, MdFeedback } from "react-icons/md";
 
@@ -17,12 +14,12 @@ export type DrawerData = {
 }
 
 export const adminDrawerData: DrawerData[] = [
-    {
-        id: "dashboard",
-        name: "Dashboard",
-        icon: MdOutlineDashboard,
-        link: "dashboard"
-    },
+    // {
+    //     id: "dashboard",
+    //     name: "Dashboard",
+    //     icon: MdOutlineDashboard,
+    //     link: "dashboard"
+    // },
     {
         id: "users",
         name: "Users",
@@ -35,29 +32,19 @@ export const adminDrawerData: DrawerData[] = [
         icon: FaUserMd,
         link: "doctors"
     },
-    {
-        id: "appointments",
-        name: "Appointments",
-        icon: FiCalendar,
-        link: "appointments"
-    },
-    {
-        id: "medical-records",
-        name: "Medical Records",
-        icon: FaFileMedicalAlt,
-        link: "medical-records"
-    },
-    {
-        id: "departments",
-        name: "Departments",
-        icon: FaClinicMedical,
-        link: "departments"
-    },
+    // {
+    //     id: "appointments",
+    //     name: "Appointments",
+    //     icon: FiCalendar,
+    //     link: "appointments"
+    // },
+    
+    
     {
         id: "complaints",
-        name: "Patient Feedback",
+        name: " Feedback",
         icon: MdFeedback,
-        link: "feedback"
+        link: "complaints"
     },
     {
         id: "analytics",
@@ -67,14 +54,9 @@ export const adminDrawerData: DrawerData[] = [
     },
     {
         id: "profile",
-        name: "Profile Settings",
+        name: "Profile ",
         icon: FaUserCog,
         link: "profile"
     },
-    {
-        id: "system-settings",
-        name: "System Settings",
-        icon: FiSettings,
-        link: "settings"
-    }
+    
 ];

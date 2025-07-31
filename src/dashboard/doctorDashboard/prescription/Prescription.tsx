@@ -4,56 +4,57 @@ import { FaEdit } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
 import { toast } from "sonner";
 import type { RootState } from "../../../app/store";
+
 import CreatePrescription from "./CreatePrescription";
-import { prescriptionsAPI, type TPrescription } from "../../../features/prescriptions/prescriptionAPI";
 import UpdatePrescription from "../../adminDashboard/prescription/UpdatePrescription";
 import DeletePrescription from "../../adminDashboard/prescription/DeletePrescription";
 
+import {
+  prescriptionsAPI,
+  type TPrescription,
+} from "../../../features/prescriptions/prescriptionAPI";
+
 const DoctorPrescriptions = () => {
-  const [searchAppointmentID, setSearchAppointmentID] = useState("");
-  const [searchUserID, setSearchUserID] = useState("");
-  const [searchResults, setSearchResults] = useState<any[] | null>(null);
+  const [searchAppointmentId, setSearchAppointmentId] = useState("");
+  const [searchUserId, setSearchUserId] = useState("");
+  const [searchResults, setSearchResults] = useState<TPrescription[] | null>(null);
   const [selectedPrescription, setSelectedPrescription] = useState<TPrescription | null>(null);
   const [prescriptionToDelete, setPrescriptionToDelete] = useState<TPrescription | null>(null);
 
-  const doctorID = useSelector((state: RootState) => state.user.user?.doctorID);
+  const doctorId = useSelector((state: RootState) => state.user.user?.userId);
 
-  const { data, isLoading, refetch } =
-    prescriptionsAPI.useGetPrescriptionsByDoctorIdQuery(doctorID ?? 0, {
-      skip: !doctorID,
-    });
+  const { data, isLoading, refetch } = prescriptionsAPI.useGetPrescriptionsByDoctorIdQuery(
+    doctorId ?? 0,
+    { skip: !doctorId }
+  );
 
-  const [getPrescriptionById] =
-    prescriptionsAPI.useLazyGetPrescriptionByIdQuery();
-  const [getPrescriptionsByUserId] =
-    prescriptionsAPI.useLazyGetPrescriptionsByUserIdQuery();
+  const [getPrescriptionById] = prescriptionsAPI.useLazyGetPrescriptionByIdQuery();
+  const [getPrescriptionsByUserId] = prescriptionsAPI.useLazyGetPrescriptionsByUserIdQuery();
 
   const handleSearch = async () => {
     setSearchResults(null);
-    if (searchAppointmentID) {
+    if (searchAppointmentId) {
       try {
-        const res = await getPrescriptionById(parseInt(searchAppointmentID)).unwrap();
-        if (!res.prescription) {
-          toast.error("Prescription not found");
-        } else if (res.prescription.doctorID !== doctorID) {
-          toast.error("Not yours");
+        const result = await getPrescriptionById(Number(searchAppointmentId)).unwrap();
+        if (!result || result.doctorId !== doctorId) {
+          toast.error("Prescription not found or not assigned to you.");
         } else {
-          setSearchResults([res.prescription]);
+          setSearchResults([result]);
         }
       } catch {
-        toast.error("Prescription not found");
+        toast.error("Prescription not found.");
       }
-    } else if (searchUserID) {
+    } else if (searchUserId) {
       try {
-        const res = await getPrescriptionsByUserId(parseInt(searchUserID)).unwrap();
-        const filtered = res.prescriptions.filter(p => p.doctorID === doctorID);
+        const results = await getPrescriptionsByUserId(Number(searchUserId)).unwrap();
+        const filtered = results.filter((p) => p.doctorId === doctorId);
         setSearchResults(filtered);
-        if (!filtered.length) toast.error("None found for this user");
+        if (!filtered.length) toast.error("No prescriptions found for this user.");
       } catch {
-        toast.error("None found");
+        toast.error("Failed to fetch prescriptions.");
       }
     } else {
-      toast.info("Enter appointment or user ID");
+      toast.info("Please enter either an Appointment ID or User ID to search.");
     }
   };
 
@@ -61,20 +62,21 @@ const DoctorPrescriptions = () => {
     <div className="p-4">
       <UpdatePrescription prescription={selectedPrescription} refetch={refetch} />
       <DeletePrescription prescription={prescriptionToDelete} refetch={refetch} />
+
       <div className="flex gap-2 mb-4">
         <input
           type="text"
           placeholder="Appointment ID"
-          value={searchAppointmentID}
-          onChange={(e) => setSearchAppointmentID(e.target.value)}
-          className="input"
+          value={searchAppointmentId}
+          onChange={(e) => setSearchAppointmentId(e.target.value)}
+          className="input input-bordered"
         />
         <input
           type="text"
           placeholder="User ID"
-          value={searchUserID}
-          onChange={(e) => setSearchUserID(e.target.value)}
-          className="input"
+          value={searchUserId}
+          onChange={(e) => setSearchUserId(e.target.value)}
+          className="input input-bordered"
         />
         <button className="btn btn-primary" onClick={handleSearch}>
           Search
@@ -82,16 +84,14 @@ const DoctorPrescriptions = () => {
         <button
           className="btn btn-success"
           onClick={() =>
-            (document.getElementById(
-              "create_prescription_modal"
-            ) as HTMLDialogElement).showModal()
+            (document.getElementById("create_prescription_modal") as HTMLDialogElement)?.showModal()
           }
         >
           Add Prescription
         </button>
       </div>
 
-      {isLoading && <p>Loading...</p>}
+      {isLoading && <p>Loading prescriptions...</p>}
 
       <table className="table">
         <thead>
@@ -104,15 +104,15 @@ const DoctorPrescriptions = () => {
           </tr>
         </thead>
         <tbody>
-          {(searchResults || data?.prescriptions)?.map((p) => (
-            <tr key={p.prescriptionID} className="hover:bg-gray-300 border-b border-gray-400">
-              <td className="px-4 py-2 border-r border-gray-400 lg:text-base">{p.prescriptionID}</td>
-              <td className="px-4 py-2 border-r border-gray-400 lg:text-base">{p.appointmentID}</td>
-              <td className="px-4 py-2 border-r border-gray-400 lg:text-base">{p.userID}</td>
-              <td className="px-4 py-2 border-r border-gray-400 lg:text-base">{p.notes}</td>
+          {(searchResults || data)?.map((p) => (
+            <tr key={p.prescriptionId} className="hover:bg-gray-200 border-b border-gray-300">
+              <td className="px-4 py-2">{p.prescriptionId}</td>
+              <td className="px-4 py-2">{p.appointmentId}</td>
+              <td className="px-4 py-2">{p.userId}</td>
+              <td className="px-4 py-2">{p.notes || "-"}</td>
               <td className="flex gap-2">
                 <button
-                  className="btn btn-sm btn-primary text-blue-600"
+                  className="btn btn-sm btn-primary"
                   onClick={() => {
                     setSelectedPrescription(p);
                     (document.getElementById("update_prescription_modal") as HTMLDialogElement)?.showModal();
@@ -121,7 +121,7 @@ const DoctorPrescriptions = () => {
                   <FaEdit size={18} />
                 </button>
                 <button
-                  className="btn btn-sm btn-danger text-red-500"
+                  className="btn btn-sm btn-error"
                   onClick={() => {
                     setPrescriptionToDelete(p);
                     (document.getElementById("delete_prescription_modal") as HTMLDialogElement)?.showModal();
@@ -137,9 +137,9 @@ const DoctorPrescriptions = () => {
 
       <CreatePrescription
         refetch={refetch}
-        appointmentID={1}
-        doctorID={doctorID ?? 0}
-        userID={1}
+        appointmentId={1} // Optional: Pass dynamically or let CreatePrescription handle it
+        doctorId={doctorId ?? 0}
+        userId={1}
       />
     </div>
   );

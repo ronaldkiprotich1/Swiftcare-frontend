@@ -1,14 +1,17 @@
 import { useSelector } from "react-redux";
 import { type RootState } from "../app/store";
-import { usersAPI } from "../features/users/userAPI";
+import { usersAPI, convertTUserToUser } from "../features/users/userAPI";
 import UpdateProfile from "./adminDashboard/manageUsers/UpdateProfile";
 
 const Profile = () => {
     const user = useSelector((state: RootState) => state.user);
-    const userID = user.user?.userID;
+    const userID = user.user?.userId;
+    console.log(userID)
     const { data, isLoading, error, refetch } = usersAPI.useGetUserByIdQuery(userID ?? 0, {
         skip: !userID,
     });
+
+    console.log("user data", data)
 
     return (
         <div>
@@ -28,8 +31,7 @@ const Profile = () => {
                         <div>
                             <h3 className="text-lg font-bold">Name: {data?.firstName} {data?.lastName}</h3>
                             <p className="text-gray-600">User ID: {data?.userId}</p>
-                            <p className="text-gray-600">Address: {data?.address}</p>
-                            <p className="text-gray-600">Phone Number: {data?.contactPhone}</p>
+                           
                             <p className="text-gray-600">Email: {data?.email}</p>
                             <p className="text-gray-600">Role: {data?.role}</p>
                             <p className="text-gray-600">Verified? {data?.isVerified ? 'Yes' : 'No'}</p>
@@ -47,8 +49,8 @@ const Profile = () => {
                     </div>
                 </div>
             )}
-            {/* Modal */}
-            {data && <UpdateProfile user={data as any} refetch={refetch} />}
+            {/* Modal - Convert TUser to User for UpdateProfile component */}
+            {data && <UpdateProfile user={convertTUserToUser(data)} refetch={refetch} />}
         </div>
     );
 }

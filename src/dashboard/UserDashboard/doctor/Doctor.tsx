@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useSelector } from "react-redux";
 import { doctorsAPI, type TDoctor } from "../../../features/doctor/doctorsAPI";
 import type { RootState } from "../../../app/store";
-import CreateAppointment from "../appointment/BookAppointment";
+import CreateAppointment from "../appointment/CreateAppointment";
 
 const UserDoctors = () => {
   const [searchSpecialization, setSearchSpecialization] = useState("");

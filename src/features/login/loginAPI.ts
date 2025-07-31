@@ -2,15 +2,15 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { ApiDomain } from "../../utils/ApiDomain";
 
 export type TLoginResponse = {
-    token: string;
-    user: {
-        user_id: number;
-        first_name: string;
-        last_name: string;
-        email: string;
-        role: string;
-    };
-}
+  token: string ;
+  user: {
+      userId: number;
+      firstName: string;
+      lastName: string;
+      email: string;
+      role: string;
+  } ;
+};
 
 type LoginInputs = {
     email: string;
@@ -24,7 +24,7 @@ export const loginAPI = createApi({
     endpoints: (builder) => ({
         loginUser: builder.mutation<TLoginResponse, LoginInputs>({
             query: (loginData) => ({
-                url: '/auth/login',
+                url: '/api/auth/login',
                 method: 'POST',
                 body: loginData
             }),

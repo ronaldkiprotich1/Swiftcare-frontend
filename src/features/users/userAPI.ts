@@ -1,107 +1,196 @@
-// src/features/users/usersAPI.ts
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { ApiDomain } from '../../utils/ApiDomain';
 import type { RootState } from '../../app/store';
 
-export type UserRole = 'user' | 'admin' | 'doctor';
-
-export type TUser = {
+// Updated interface to match your userSlice and backend response
+export interface TUser {
   userId: number;
   firstName: string;
   lastName: string;
   email: string;
-  contactPhone?: string;
-  address?: string;
-  role: UserRole;
+  password?: string; // Optional since backend shouldn't return this in real responses
+  contactPhone: string | null;
+  address: string | null; 
+  role: string;
   isVerified: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-    image_url?: string; 
-};
+  verificationCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+  image_url?: string; // Added missing image_url property
+}
 
-export type NewUser = Omit<TUser, 'userId' | 'isVerified' | 'createdAt' | 'updatedAt'> & {
-  password: string;
-};
+// User interface for components that expect non-nullable address
+export interface User {
+  userId: number; // Changed from userID to userId to match
+  firstName: string;
+  lastName: string;
+  email: string;
+  password?: string;
+  contactPhone: string;
+  address: string; // Non-nullable for components that require it
+  role: string;
+  isVerified: boolean;
+  verificationCode: string | null;
+  createdAt: string;
+  updatedAt: string;
+  image_url?: string;
+}
 
-export type LoginRequest = {
+// Registration request interface - removed userId since it's auto-generated
+export interface RegisterRequest {
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
-};
+  role: string;
+  contactPhone?: string;
+  address?: string;
+  image_url?: string;
+}
 
-export type LoginResponse = {
+// Login interfaces - updated to match your userSlice
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
   token: string;
-  role: UserRole;
-  user: Pick<TUser, 'userId' | 'firstName' | 'lastName' | 'email'>;
-};
+  user: {
+    userId: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    role: string;
+  };
+}
 
 export const usersAPI = createApi({
   reducerPath: 'usersAPI',
   baseQuery: fetchBaseQuery({
-    baseUrl: ApiDomain + '/auth',
+    baseUrl: `${ApiDomain}/api`,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).user.token;
+      const state = getState() as RootState;
+      const token = state.user?.token;
+      
+      headers.set('Content-Type', 'application/json');
+      
       if (token) {
         headers.set('Authorization', `Bearer ${token}`);
       }
-      headers.set('Content-Type', 'application/json');
+      
+      console.log('UsersAPI - Token from Redux:', token ? 'Present' : 'Not present');
+      console.log('UsersAPI - User ID from Redux:', state.user?.user?.userId);
+      
       return headers;
     },
   }),
   tagTypes: ['Users'],
   endpoints: (builder) => ({
-    registerUser: builder.mutation<{ message: string }, NewUser>({
-      query: (user) => ({
-        url: '/register',
+    // Registration endpoint
+    register: builder.mutation<TUser, RegisterRequest>({
+      query: (userData) => ({
+        url: '/users/register',
         method: 'POST',
-        body: user,
+        body: userData,
       }),
+      invalidatesTags: ['Users'],
+      transformErrorResponse: (response: any) => {
+        console.error('Registration Error:', response);
+        return response;
+      },
     }),
 
-    loginUser: builder.mutation<LoginResponse, LoginRequest>({
+    // Login endpoint - updated response type
+    login: builder.mutation<LoginResponse, LoginRequest>({
       query: (credentials) => ({
-        url: '/login',
+        url: '/users/login',
         method: 'POST',
         body: credentials,
       }),
+      transformErrorResponse: (response: any) => {
+        console.error('Login Error:', response);
+        return response;
+      },
     }),
 
-    verifyUser: builder.mutation<
-      { message: string; user: TUser },
-      { email: string; code: string }
-    >({
-      query: (data) => ({
-        url: '/verify',
-        method: 'POST',
-        body: data,
-      }),
-    }),
-
+    // Get all users
     getAllUsers: builder.query<TUser[], void>({
       query: () => '/users',
       providesTags: ['Users'],
+      transformErrorResponse: (response: any) => {
+        console.error('Get All Users Error:', response);
+        return response;
+      },
     }),
 
+    // Get user by ID
     getUserById: builder.query<TUser, number>({
-      query: (id) => `/user/${id}`,
-      providesTags: ['Users'],
+      query: (id) => `/users/${id}`,
+      providesTags: (_result, _error, id) => [{ type: 'Users', id }],
+      transformErrorResponse: (response: any) => {
+        console.error('Get User By ID Error:', response);
+        return response;
+      },
     }),
 
-    updateUserById: builder.mutation<TUser, { id: number } & Partial<TUser>>({
-      query: ({ id, ...data }) => ({
-        url: `/user/${id}`,
+    // Update user by ID (general update)
+    updateUserById: builder.mutation<TUser, { userId: number; [key: string]: any }>({
+      query: ({ userId, ...updates }) => ({
+        url: `/users/${userId}`,
         method: 'PUT',
-        body: data,
+        body: updates,
       }),
       invalidatesTags: ['Users'],
+      transformErrorResponse: (response: any) => {
+        console.error('Update User Error:', response);
+        return response;
+      },
+    }),
+
+    // Delete user
+    deleteUser: builder.mutation<void, number>({
+      query: (userId) => ({
+        url: `/users/${userId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Users'],
+      transformErrorResponse: (response: any) => {
+        console.error('Delete User Error:', response);
+        return response;
+      },
+    }),
+
+    // Update user role - using general update endpoint since specific role endpoint may not exist
+    updateUserRole: builder.mutation<TUser, { userId: number; role: string }>({
+      query: ({ userId, role }) => ({
+        url: `/users/${userId}`,
+        method: 'PUT',
+        body: { role },
+      }),
+      invalidatesTags: ['Users'],
+      transformErrorResponse: (response: any) => {
+        console.error('Update User Role Error:', response);
+        return response;
+      },
     }),
   }),
 });
 
+// Utility function to convert TUser to User (handling null values)
+export const convertTUserToUser = (tUser: TUser): User => ({
+  ...tUser,
+  contactPhone: tUser.contactPhone || '',
+  address: tUser.address || '',
+});
+
 export const {
-  useRegisterUserMutation,
-  useLoginUserMutation,
-  useVerifyUserMutation,
+  useRegisterMutation,
+  useLoginMutation,
   useGetAllUsersQuery,
   useGetUserByIdQuery,
+  useLazyGetUserByIdQuery,
   useUpdateUserByIdMutation,
+  useDeleteUserMutation,
+  useUpdateUserRoleMutation,
 } = usersAPI;

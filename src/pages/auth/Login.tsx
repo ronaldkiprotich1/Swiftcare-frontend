@@ -1,6 +1,31 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useForm, type SubmitHandler } from "react-hook-form";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import * as yup from "yup";
+import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 import { motion } from 'framer-motion';
+import { loginAPI } from "../../features/login/loginAPI";
+import { loginSuccess } from "../../features/users/userSlice";
+ // Update path as needed
+
+type LoginInputs = {
+  email: string;
+  password: string;
+};
+
+const schema = yup.object({
+  email: yup
+    .string()
+    .email("Invalid email")
+    .max(100, "Max 100 characters")
+    .required("Email is required"),
+  password: yup
+    .string()
+    .min(8, "Min 8 characters")
+    .max(100, "Max 100 characters")
+    .required("Password is required"),
+});
 
 const DotsLoader = () => (
   <div className="flex space-x-1">
@@ -16,88 +41,114 @@ const DotsLoader = () => (
 );
 
 const Login = () => {
+  const location = useLocation();
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch();
+  const [loginUser, { isLoading }] = loginAPI.useLoginUserMutation();
+  const emailFormState = location.state?.email || "";
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginInputs>({
+    resolver: yupResolver(schema),
+    defaultValues: {
+      email: emailFormState,
+    },
+  });
 
+  const onSubmit: SubmitHandler<LoginInputs> = async (data) => {
+    console.log("Login attempt with data:", data);
     try {
-      const res = await fetch('http://localhost:8081/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const response = await loginUser(data).unwrap();
+      
+      // Log the full response to see what we're getting
+      console.log("Login response:", response);
+      
+      // Prepare user data for Redux store
+      
 
-      const data = await res.json();
+      // Dispatch login success with properly formatted data
+      dispatch(loginSuccess(response))
 
-      if (res.ok) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.role);
+    
 
-        // Redirect based on role
-        if (data.role === 'patient') {
-          navigate('/patient/dashboard');
-        } else if (data.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/dashboard');
-        }
+      toast.success("Login was successful");
+
+      // Navigate based on role
+      if (response.user.role === "admin") {
+        navigate("/admin/dashboard/users");
+      } else if (response.user.role === "doctor") {
+        navigate("/doctor/dashboard/appointments");
       } else {
-        alert(data.error || 'Login failed');
+        navigate("/user/dashboard/appointments");
       }
-    } catch (err) {
-      alert('Something went wrong. Please try again.');
-    } finally {
-      setLoading(false);
+    } catch (error: any) {
+      console.log("Login Error:", error);
+      toast.error(error?.data?.message || error?.data?.error || "Error logging in");
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-blue-50">
-      <form
-        onSubmit={handleLogin}
-        className="bg-white p-8 shadow-md rounded w-full max-w-md"
-      >
-        <h2 className="text-2xl font-bold mb-6 text-center text-blue-700">
-          Login to SwiftCare
-        </h2>
-
-        <input
-          type="email"
-          placeholder="Email"
-          className="input input-bordered w-full mb-4"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="input input-bordered w-full mb-4"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-
-        <button
-          type="submit"
-          className="btn btn-primary w-full h-12 flex justify-center items-center"
-          disabled={loading}
-        >
-          {loading ? <DotsLoader /> : 'Login'}
-        </button>
-
-        <p className="mt-4 text-sm text-center">
-          Don&apos;t have an account?{' '}
-          <a href="/register" className="text-blue-600 underline">
-            Register
-          </a>
-        </p>
-      </form>
+      {isLoading ? (
+        <div className="flex flex-col gap-4 items-center">
+          <span className="loading loading-bars loading-xl text-blue-500"></span>
+          <p className="text-center text-2xl font-semibold text-blue-600">
+            Logging in, Please wait..
+          </p>
+        </div>
+      ) : (
+        <div className="bg-white shadow-2xl flex flex-col w-full max-w-lg p-8 rounded-md">
+          <div>
+            <h2 className="text-center font-semibold text-xl text-blue-600 md:text-2xl">
+              Login to SwiftCare
+            </h2>
+          </div>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="flex flex-col gap-4 w-full mt-4"
+          >
+            <input
+              type="email"
+              {...register("email")}
+              placeholder="Email"
+              className="input border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 w-full"
+              readOnly={!!emailFormState}
+            />
+            {errors.email && (
+              <span className="text-rose-500 text-sm">
+                {errors.email.message}
+              </span>
+            )}
+            <input
+              type="password"
+              {...register("password")}
+              placeholder="Password"
+              className="input border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-600 w-full"
+            />
+            {errors.password && (
+              <span className="text-rose-500 text-sm">
+                {errors.password.message}
+              </span>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-blue-500 hover:bg-blue-600 p-2 rounded-md mt-4 text-white h-12 flex justify-center items-center"
+              disabled={isLoading}
+            >
+              {isLoading ? <DotsLoader /> : 'Login'}
+            </button>
+          </form>
+          <div className="mt-4">
+            Don&apos;t have an account?{" "}
+            <span className="text-sm text-blue-500 cursor-pointer">
+              <NavLink to={"/register"}>Register</NavLink>
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

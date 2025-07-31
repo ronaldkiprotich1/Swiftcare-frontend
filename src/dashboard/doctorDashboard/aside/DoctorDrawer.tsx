@@ -1,29 +1,27 @@
-import { Link } from "react-router-dom"
-import { doctorDrawerData } from "./drawerData"
+import { Link } from "react-router-dom";
+import { doctorDrawerData } from "./drawerData";
 
 const DoctorDrawer = () => {
-    return (
-        <div>
-            <h2 className="text-xl font-bold text-white p-4 border-b-2 border-gray-700">
-                Doctor Dashboard
-            </h2>
-            <ul>
-                {
-                    doctorDrawerData.map((item) => (
-                        <li key={item.id}>
-                            <Link
-                                to={item.link}
-                                className="flex space-x-3 border-b-2 border-transparent hover:border-blue-400 text-white hover:bg-gray-700 p-4"
-                            >
-                                <item.icon size={30} />
-                                <span className="text-xl text-gray-100 mb-2">{item.name}</span>
-                            </Link>
-                        </li>
-                    ))
-                }
-            </ul>
-        </div>
-    )
-}
+  return (
+    <div className="bg-gray-900 min-h-screen">
+      <h2 className="text-2xl font-semibold text-white px-4 py-6 border-b border-gray-700">
+        👨‍⚕️ Welcome back, Doctor!
+      </h2>
+      <ul>
+        {doctorDrawerData.map((item) => (
+          <li key={item.id}>
+            <Link
+              to={item.link}
+              className="flex items-center space-x-3 px-5 py-4 hover:bg-blue-600 hover:text-white transition-colors duration-200 text-gray-300"
+            >
+              <item.icon size={22} />
+              <span className="text-lg font-medium">{item.name}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
 
-export default DoctorDrawer
+export default DoctorDrawer;

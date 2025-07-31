@@ -3,20 +3,30 @@ import { ApiDomain } from "../../utils/ApiDomain";
 import type { RootState } from "../../app/store";
 
 export type TDoctor = {
-  doctorID: number;
-  firstName: string;
+  doctorId: number;
+  name: string;
   lastName: string;
   specialization: string;
-  contactPhone?: string | null;
-  availableDays?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  email: string;
+  contactPhone: string;
+  consultationFee: number;
+  availability: string;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
+export type DoctorsResponse = {
+  doctors: TDoctor[];
+};
+
+export type DoctorResponse = {
+  doctor: TDoctor;
 };
 
 export const doctorsAPI = createApi({
   reducerPath: "doctorsAPI",
   baseQuery: fetchBaseQuery({
-    baseUrl: ApiDomain,
+    baseUrl: `${ApiDomain}/api`,
     prepareHeaders: (headers, { getState }) => {
       const token = (getState() as RootState).user.token;
       if (token) {
@@ -28,48 +38,28 @@ export const doctorsAPI = createApi({
   }),
   tagTypes: ["Doctors"],
   endpoints: (builder) => ({
-    // Get all doctors
-    getDoctors: builder.query<{ doctors: TDoctor[] }, void>({
-      query: () => "/doctor",
+    // Fetch all doctors
+    getDoctors: builder.query<DoctorsResponse, void>({
+      query: () => "/doctors",
+      transformResponse: (response: any) => ({
+        doctors: response.doctors || [],
+      }),
       providesTags: ["Doctors"],
     }),
 
-    // Get doctor by ID
-    getDoctorById: builder.query<{ doctor: TDoctor }, number>({
-      query: (doctorID) => `/doctor/${doctorID}`,
+    // Fetch doctor by ID
+    getDoctorById: builder.query<DoctorResponse, number>({
+      query: (doctorId) => `/doctors/${doctorId}`,
+      transformResponse: (response: any) => ({
+        doctor: response.doctor || response,
+      }),
       providesTags: ["Doctors"],
-    }),
-
-    // Get doctors by specialization
-    getDoctorsBySpecialization: builder.query<{ doctors: TDoctor[] }, string>({
-      query: (specialization) => `/doctor/specialization/${specialization}`,
-      providesTags: ["Doctors"],
-    }),
-    // Create a new doctor
-    createDoctor: builder.mutation<TDoctor, Partial<TDoctor>>({
-      query: (newDoctor) => ({
-        url: "/doctor",
-        method: "POST",
-        body: newDoctor,
-      }),
-        invalidatesTags: ["Doctors"],
-    }),
-    // Update an existing doctor
-    updateDoctor: builder.mutation<TDoctor, Partial<TDoctor> & { doctorID: number }>({
-      query: (updatedDoctor) => ({
-        url: `/doctor/${updatedDoctor.doctorID}`,
-        method: "PUT",
-        body: updatedDoctor,  
-      }),
-      invalidatesTags: ["Doctors"],
-    }),
-    // Delete a doctor
-    deleteDoctor: builder.mutation<{ message: string }, number>({
-      query: (doctorID) => ({
-        url: `/doctor/${doctorID}`,
-        method: "DELETE", 
-      }),
-      invalidatesTags: ["Doctors"],
     }),
   }),
 });
+
+export const {
+  useGetDoctorsQuery,
+  useGetDoctorByIdQuery,
+  useLazyGetDoctorByIdQuery,
+} = doctorsAPI;
