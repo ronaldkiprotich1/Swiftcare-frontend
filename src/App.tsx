@@ -37,7 +37,7 @@ import UserPrescriptions from "./dashboard/UserDashboard/prescription/UserPrescr
 import UserDoctors from "./dashboard/UserDashboard/doctor/Doctor";
 import UserComplaints from "./dashboard/UserDashboard/complaint/UserComplaint";
 import UserDashboard from "./dashboard/UserDashboard/userDashboard";
-
+import ChatWidget from "./components/ChatWidget";
 const Placeholder = ({ title }: { title: string }) => (
   <div className="p-8 text-center text-xl font-semibold">{title} Page Coming Soon</div>
 );
@@ -70,7 +70,7 @@ function App() {
         {/* Admin Dashboard */}
         <Route path="/admin/dashboard" element={<AdminDashboard />}>
           <Route index element={<Placeholder title="Admin Dashboard" />} />
-          {/* <Route path="appointments" element={<DoctorAppointments />} /> */}
+          <Route path="appointments" element={<DoctorAppointments />} />
           <Route path="users" element={<Users />} />
           <Route path="doctors" element={<AdminDoctors />} />
           <Route path="medical-records" element={<Placeholder title="Medical Records" />} />
@@ -90,7 +90,8 @@ function App() {
           <Route path="profile" element={<Profile />} />
         </Route>
       </Routes>
-
+{/* 👇 Floating Chat Assistant */}
+      <ChatWidget />
       <Footer />
     </div>
   );

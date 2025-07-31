@@ -1,4 +1,3 @@
-
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
@@ -14,19 +13,22 @@ type CreateDoctorInputs = {
   firstName: string;
   lastName: string;
   specialization: string;
-  contactPhone?: string | null;
-  availableDays?: string | null;
+  email?: string;
+  contactPhone?: string;
+  consultationFee?: number;
+  availableDays?: string;
 };
-
 
 const schema: yup.ObjectSchema<CreateDoctorInputs> = yup
   .object({
-    userID: yup.number().required("User ID is required"),
+    userID: yup.number().required("User ID is required").positive("User ID must be positive"),
     firstName: yup.string().required("First name is required"),
     lastName: yup.string().required("Last name is required"),
     specialization: yup.string().required("Specialization is required"),
-    contactPhone: yup.string().nullable(),
-    availableDays: yup.string().nullable(),
+    email: yup.string().email("Invalid email format").optional(),
+    contactPhone: yup.string().optional(),
+    consultationFee: yup.number().positive("Fee must be positive").optional(),
+    availableDays: yup.string().optional(),
   })
   .required();
 
@@ -41,21 +43,37 @@ const CreateDoctor = ({ refetch }: CreateDoctorProps) => {
   } = useForm<CreateDoctorInputs>({
     resolver: yupResolver(schema),
     defaultValues: {
-      contactPhone: null,
-      availableDays: null,
+      userID: 0,
+      firstName: "",
+      lastName: "",
+      specialization: "",
+      email: "",
+      contactPhone: "",
+      consultationFee: 0,
+      availableDays: "",
     },
   });
 
   const onSubmit: SubmitHandler<CreateDoctorInputs> = async (data) => {
     try {
-      await createDoctor(data).unwrap();
+      // Clean up the data before sending
+      const cleanData = {
+        ...data,
+        email: data.email || undefined,
+        contactPhone: data.contactPhone || undefined,
+        consultationFee: data.consultationFee || undefined,
+        availableDays: data.availableDays || undefined,
+      };
+
+      await createDoctor(cleanData).unwrap();
       toast.success("Doctor created successfully");
       refetch();
       reset();
       (document.getElementById("create_doctor_modal") as HTMLDialogElement)?.close();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to create doctor");
+    } catch (err: any) {
+      console.error("Create doctor error:", err);
+      const errorMessage = err?.data?.message || err?.message || "Failed to create doctor";
+      toast.error(errorMessage);
     }
   };
 
@@ -66,13 +84,14 @@ const CreateDoctor = ({ refetch }: CreateDoctorProps) => {
         <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
           <input
             type="number"
-            {...register("userID")}
+            {...register("userID", { valueAsNumber: true })}
             placeholder="User ID"
             className="input rounded w-full p-2 bg-white text-gray-800"
           />
-           {errors.userID && (
-            <span className="text-sm text-red-700">{errors.userID.message}</span>
+          {errors.userID && (
+            <span className="text-sm text-red-400">{errors.userID.message}</span>
           )}
+
           <input
             type="text"
             {...register("firstName")}
@@ -80,7 +99,7 @@ const CreateDoctor = ({ refetch }: CreateDoctorProps) => {
             className="input rounded w-full p-2 bg-white text-gray-800"
           />
           {errors.firstName && (
-            <span className="text-sm text-red-700">{errors.firstName.message}</span>
+            <span className="text-sm text-red-400">{errors.firstName.message}</span>
           )}
 
           <input
@@ -90,7 +109,7 @@ const CreateDoctor = ({ refetch }: CreateDoctorProps) => {
             className="input rounded w-full p-2 bg-white text-gray-800"
           />
           {errors.lastName && (
-            <span className="text-sm text-red-700">{errors.lastName.message}</span>
+            <span className="text-sm text-red-400">{errors.lastName.message}</span>
           )}
 
           <input
@@ -100,20 +119,40 @@ const CreateDoctor = ({ refetch }: CreateDoctorProps) => {
             className="input rounded w-full p-2 bg-white text-gray-800"
           />
           {errors.specialization && (
-            <span className="text-sm text-red-700">{errors.specialization.message}</span>
+            <span className="text-sm text-red-400">{errors.specialization.message}</span>
           )}
 
           <input
-            type="text"
+            type="email"
+            {...register("email")}
+            placeholder="Email (optional)"
+            className="input rounded w-full p-2 bg-white text-gray-800"
+          />
+          {errors.email && (
+            <span className="text-sm text-red-400">{errors.email.message}</span>
+          )}
+
+          <input
+            type="tel"
             {...register("contactPhone")}
             placeholder="Contact Phone (optional)"
             className="input rounded w-full p-2 bg-white text-gray-800"
           />
 
           <input
+            type="number"
+            {...register("consultationFee", { valueAsNumber: true })}
+            placeholder="Consultation Fee (optional)"
+            className="input rounded w-full p-2 bg-white text-gray-800"
+          />
+          {errors.consultationFee && (
+            <span className="text-sm text-red-400">{errors.consultationFee.message}</span>
+          )}
+
+          <input
             type="text"
             {...register("availableDays")}
-            placeholder="Available Days (optional)"
+            placeholder="Available Days (e.g., Monday,Tuesday,Wednesday)"
             className="input rounded w-full p-2 bg-white text-gray-800"
           />
 
@@ -121,18 +160,20 @@ const CreateDoctor = ({ refetch }: CreateDoctorProps) => {
             <button type="submit" className="btn btn-primary" disabled={isLoading}>
               {isLoading ? (
                 <>
-                  <span className="loading loading-bars loading-xl" /> Saving...
+                  <span className="loading loading-spinner loading-sm mr-2" />
+                  Creating...
                 </>
               ) : (
-                "Save"
+                "Create Doctor"
               )}
             </button>
             <button
               type="button"
-              className="btn"
-              onClick={() =>
-                (document.getElementById("create_doctor_modal") as HTMLDialogElement)?.close()
-              }
+              className="btn btn-outline"
+              onClick={() => {
+                reset();
+                (document.getElementById("create_doctor_modal") as HTMLDialogElement)?.close();
+              }}
             >
               Cancel
             </button>

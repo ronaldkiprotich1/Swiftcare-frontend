@@ -3,124 +3,115 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
   AreaChart, Area, CartesianGrid, LineChart, Line, Legend, RadialBarChart, RadialBar
 } from 'recharts';
-import { useSelector } from 'react-redux';
-import { FaCalendar, FaPrescriptionBottle, FaUsers, FaArrowTrendUp, FaChartLine, FaClock } from 'react-icons/fa6';
-import { appointmentsAPI } from '../../../features/appointments/appointmentsAPI';
-import { prescriptionsAPI } from '../../../features/prescriptions/prescriptionAPI';
-import type { RootState } from '../../../app/store';
+import { Calendar, Pill, Users, TrendingUp, DollarSign, Clock, Activity, Target, Award } from 'lucide-react';
 
-// Enhanced mock data with more realistic trends
+// Enhanced mock data with realistic trends
 const trendData = [
-  { name: 'Mon', appointments: 8, prescriptions: 6, completedAppointments: 7, revenue: 1200 },
-  { name: 'Tue', appointments: 12, prescriptions: 9, completedAppointments: 11, revenue: 1800 },
-  { name: 'Wed', appointments: 6, prescriptions: 4, completedAppointments: 5, revenue: 900 },
-  { name: 'Thu', appointments: 15, prescriptions: 12, completedAppointments: 14, revenue: 2100 },
-  { name: 'Fri', appointments: 10, prescriptions: 8, completedAppointments: 9, revenue: 1500 },
-  { name: 'Sat', appointments: 7, prescriptions: 5, completedAppointments: 6, revenue: 1050 },
-  { name: 'Sun', appointments: 4, prescriptions: 2, completedAppointments: 3, revenue: 600 },
+  { name: 'Mon', appointments: 18, prescriptions: 14, completedAppointments: 16, revenue: 2700 },
+  { name: 'Tue', appointments: 22, prescriptions: 19, completedAppointments: 21, revenue: 3150 },
+  { name: 'Wed', appointments: 15, prescriptions: 12, completedAppointments: 14, revenue: 2100 },
+  { name: 'Thu', appointments: 28, prescriptions: 24, completedAppointments: 26, revenue: 3900 },
+  { name: 'Fri', appointments: 25, prescriptions: 21, completedAppointments: 23, revenue: 3450 },
+  { name: 'Sat', apartments: 12, prescriptions: 9, completedAppointments: 11, revenue: 1650 },
+  { name: 'Sun', appointments: 8, prescriptions: 6, completedAppointments: 7, revenue: 1200 },
 ];
 
 const monthlyData = [
-  { month: 'Jan', appointments: 89, prescriptions: 67, revenue: 15400 },
-  { month: 'Feb', appointments: 95, prescriptions: 72, revenue: 16800 },
-  { month: 'Mar', appointments: 102, prescriptions: 78, revenue: 18200 },
-  { month: 'Apr', appointments: 87, prescriptions: 65, revenue: 14900 },
-  { month: 'May', appointments: 110, prescriptions: 85, revenue: 19500 },
-  { month: 'Jun', appointments: 98, prescriptions: 74, revenue: 17200 },
+  { month: 'Jan', appointments: 445, prescriptions: 367, revenue: 66750 },
+  { month: 'Feb', appointments: 478, prescriptions: 392, revenue: 71700 },
+  { month: 'Mar', appointments: 512, prescriptions: 418, revenue: 76800 },
+  { month: 'Apr', appointments: 489, prescriptions: 401, revenue: 73350 },
+  { month: 'May', appointments: 534, prescriptions: 445, revenue: 80100 },
+  { month: 'Jun', appointments: 498, prescriptions: 408, revenue: 74700 },
 ];
 
 const patientSatisfactionData = [
-  { name: 'Excellent', value: 45, fill: '#10B981' },
-  { name: 'Good', value: 30, fill: '#3B82F6' },
-  { name: 'Average', value: 20, fill: '#F59E0B' },
+  { name: 'Excellent', value: 52, fill: '#10B981' },
+  { name: 'Good', value: 28, fill: '#3B82F6' },
+  { name: 'Average', value: 15, fill: '#F59E0B' },
   { name: 'Poor', value: 5, fill: '#EF4444' },
 ];
 
-const DoctorAnalysis = () => {
-  const [selectedTimeframe, setSelectedTimeframe] = useState<'week' | 'month'>('week');
-  const [selectedChart, setSelectedChart] = useState<'bar' | 'line' | 'area'>('bar');
+const ModernAnalyticsDashboard = () => {
+  const [selectedTimeframe, setSelectedTimeframe] = useState('week');
+  const [selectedChart, setSelectedChart] = useState('bar');
   
-  const doctorID = useSelector((state: RootState) => state.user.user?.doctorID);
-  const doctorName = useSelector((state: RootState) => state.user.user?.firstName || 'Doctor');
-
-  const { data: doctorAppointments, isLoading: appointmentsLoading } =
-    appointmentsAPI.useGetAppointmentsByDoctorIdQuery(doctorID ?? 0, {
-      skip: !doctorID,
-    });
-
-  const { data: doctorPrescriptions, isLoading: prescriptionsLoading } =
-    prescriptionsAPI.useGetPrescriptionsByDoctorIdQuery(doctorID ?? 0, {
-      skip: !doctorID,
-    });
-
-  // Calculate additional metrics
+  // Calculate metrics from mock data
   const metrics = useMemo(() => {
-    const appointments = doctorAppointments?.appointments || [];
-    const prescriptions = doctorPrescriptions?.prescriptions || [];
-    
-    const totalAppointments = appointments.length;
-    const totalPrescriptions = prescriptions.length;
-    const completionRate = totalAppointments > 0 ? ((totalAppointments - 3) / totalAppointments) * 100 : 0; // Mock completed appointments
-    const avgPrescriptionsPerAppointment = totalAppointments > 0 ? (totalPrescriptions / totalAppointments).toFixed(1) : '0';
+    const currentData = selectedTimeframe === 'week' ? trendData : monthlyData;
+    const totalAppointments = currentData.reduce((sum, item) => sum + item.appointments, 0);
+    const totalPrescriptions = currentData.reduce((sum, item) => sum + item.prescriptions, 0);
+    const totalRevenue = currentData.reduce((sum, item) => sum + item.revenue, 0);
+    const completionRate = selectedTimeframe === 'week' 
+      ? (trendData.reduce((sum, item) => sum + (item.completedAppointments || item.appointments * 0.9), 0) / totalAppointments) * 100
+      : 92.5;
+    const avgPrescriptionsPerAppointment = totalAppointments > 0 ? (totalPrescriptions / totalAppointments) : 0;
+    const uniquePatients = Math.floor(totalAppointments * 0.75);
     
     return {
       totalAppointments,
       totalPrescriptions,
-      completionRate: Math.max(0, completionRate),
+      completionRate,
       avgPrescriptionsPerAppointment,
-      totalRevenue: totalAppointments * 150, // Mock revenue calculation
-      patientsThisWeek: Math.floor(totalAppointments * 0.8), // Mock unique patients
+      totalRevenue,
+      uniquePatients,
     };
-  }, [doctorAppointments, doctorPrescriptions]);
+  }, [selectedTimeframe]);
 
   const summaryCards = [
     {
       label: 'Total Appointments',
-      value: metrics.totalAppointments,
-      icon: FaCalendar,
-      color: 'bg-blue-500',
+      value: metrics.totalAppointments.toLocaleString(),
+      icon: Calendar,
+      color: 'from-blue-500 to-blue-600',
       change: '+12%',
-      changeType: 'positive' as const
+      changeType: 'positive',
+      description: 'vs last period'
     },
     {
       label: 'Prescriptions Written',
-      value: metrics.totalPrescriptions,
-      icon: FaPrescriptionBottle,
-      color: 'bg-green-500',
+      value: metrics.totalPrescriptions.toLocaleString(),
+      icon: Pill,
+      color: 'from-emerald-500 to-emerald-600',
       change: '+8%',
-      changeType: 'positive' as const
+      changeType: 'positive',
+      description: 'vs last period'
     },
     {
-      label: 'Patients This Week',
-      value: metrics.patientsThisWeek,
-      icon: FaUsers,
-      color: 'bg-purple-500',
+      label: selectedTimeframe === 'week' ? 'Patients This Week' : 'Unique Patients',
+      value: metrics.uniquePatients.toLocaleString(),
+      icon: Users,
+      color: 'from-purple-500 to-purple-600',
       change: '+5%',
-      changeType: 'positive' as const
+      changeType: 'positive',
+      description: 'vs last period'
     },
     {
       label: 'Completion Rate',
       value: `${metrics.completionRate.toFixed(1)}%`,
-      icon: FaArrowTrendUp,
-      color: 'bg-yellow-500',
+      icon: Target,
+      color: 'from-amber-500 to-amber-600',
       change: '-2%',
-      changeType: 'negative' as const
+      changeType: 'negative',
+      description: 'vs last period'
     },
     {
-      label: 'Revenue This Month',
+      label: selectedTimeframe === 'week' ? 'Revenue This Week' : 'Revenue This Period',
       value: `$${metrics.totalRevenue.toLocaleString()}`,
-      icon: FaChartLine,
-      color: 'bg-indigo-500',
+      icon: DollarSign,
+      color: 'from-indigo-500 to-indigo-600',
       change: '+15%',
-      changeType: 'positive' as const
+      changeType: 'positive',
+      description: 'vs last period'
     },
     {
       label: 'Avg. Prescriptions',
-      value: metrics.avgPrescriptionsPerAppointment,
-      icon: FaClock,
-      color: 'bg-pink-500',
+      value: metrics.avgPrescriptionsPerAppointment.toFixed(1),
+      icon: Activity,
+      color: 'from-rose-500 to-rose-600',
       change: '+3%',
-      changeType: 'positive' as const
+      changeType: 'positive',
+      description: 'per appointment'
     },
   ];
 
@@ -129,23 +120,45 @@ const DoctorAnalysis = () => {
   const renderChart = () => {
     const commonProps = {
       data: chartData,
-      margin: { top: 5, right: 30, left: 20, bottom: 5 }
+      margin: { top: 20, right: 30, left: 20, bottom: 5 }
     };
 
     switch (selectedChart) {
       case 'line':
         return (
           <LineChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={selectedTimeframe === 'week' ? 'name' : 'month'} />
-            <YAxis />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis 
+              dataKey={selectedTimeframe === 'week' ? 'name' : 'month'} 
+              tick={{ fontSize: 12 }}
+              stroke="#6b7280"
+            />
+            <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'white', 
+                border: '1px solid #e5e7eb', 
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              }} 
+            />
             <Legend />
-            <Line type="monotone" dataKey="appointments" stroke="#4F46E5" strokeWidth={3} />
-            <Line type="monotone" dataKey="prescriptions" stroke="#10B981" strokeWidth={3} />
-            {selectedTimeframe === 'week' && (
-              <Line type="monotone" dataKey="completedAppointments" stroke="#F59E0B" strokeWidth={2} />
-            )}
+            <Line 
+              type="monotone" 
+              dataKey="appointments" 
+              stroke="#4F46E5" 
+              strokeWidth={3} 
+              dot={{ fill: '#4F46E5', strokeWidth: 2, r: 4 }}
+              name="Appointments"
+            />
+            <Line 
+              type="monotone" 
+              dataKey="prescriptions" 
+              stroke="#10B981" 
+              strokeWidth={3}
+              dot={{ fill: '#10B981', strokeWidth: 2, r: 4 }}
+              name="Prescriptions"
+            />
           </LineChart>
         );
       
@@ -154,199 +167,304 @@ const DoctorAnalysis = () => {
           <AreaChart {...commonProps}>
             <defs>
               <linearGradient id="colorAppointments" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#4F46E5" stopOpacity={0} />
+                <stop offset="5%" stopColor="#4F46E5" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.05} />
               </linearGradient>
               <linearGradient id="colorPrescriptions" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
-                <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
+                <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="#10B981" stopOpacity={0.05} />
               </linearGradient>
             </defs>
-            <XAxis dataKey={selectedTimeframe === 'week' ? 'name' : 'month'} />
-            <YAxis />
-            <CartesianGrid strokeDasharray="3 3" />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis 
+              dataKey={selectedTimeframe === 'week' ? 'name' : 'month'} 
+              tick={{ fontSize: 12 }}
+              stroke="#6b7280"
+            />
+            <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'white', 
+                border: '1px solid #e5e7eb', 
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              }} 
+            />
             <Legend />
-            <Area type="monotone" dataKey="appointments" stackId="1" stroke="#4F46E5" fill="url(#colorAppointments)" />
-            <Area type="monotone" dataKey="prescriptions" stackId="1" stroke="#10B981" fill="url(#colorPrescriptions)" />
+            <Area 
+              type="monotone" 
+              dataKey="appointments" 
+              stroke="#4F46E5" 
+              strokeWidth={2}
+              fill="url(#colorAppointments)" 
+              name="Appointments"
+            />
+            <Area 
+              type="monotone" 
+              dataKey="prescriptions" 
+              stroke="#10B981" 
+              strokeWidth={2}
+              fill="url(#colorPrescriptions)" 
+              name="Prescriptions"
+            />
           </AreaChart>
         );
       
       default:
         return (
           <BarChart {...commonProps}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey={selectedTimeframe === 'week' ? 'name' : 'month'} />
-            <YAxis />
-            <Tooltip />
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis 
+              dataKey={selectedTimeframe === 'week' ? 'name' : 'month'} 
+              tick={{ fontSize: 12 }}
+              stroke="#6b7280"
+            />
+            <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+            <Tooltip 
+              contentStyle={{ 
+                backgroundColor: 'white', 
+                border: '1px solid #e5e7eb', 
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+              }} 
+            />
             <Legend />
-            <Bar dataKey="appointments" fill="#4F46E5" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="prescriptions" fill="#10B981" radius={[4, 4, 0, 0]} />
+            <Bar 
+              dataKey="appointments" 
+              fill="#4F46E5" 
+              radius={[4, 4, 0, 0]} 
+              name="Appointments"
+            />
+            <Bar 
+              dataKey="prescriptions" 
+              fill="#10B981" 
+              radius={[4, 4, 0, 0]} 
+              name="Prescriptions"
+            />
           </BarChart>
         );
     }
   };
 
-  if (appointmentsLoading || prescriptionsLoading) {
-    return (
-      <div className="p-6 flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="loading loading-spinner loading-lg mb-4"></div>
-          <p className="text-gray-600">Loading your analytics...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome back, Dr. {doctorName}!</h1>
-        <p className="text-gray-600">Here's your practice overview and analytics</p>
-      </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                Analytics Dashboard
+              </h1>
+              <p className="text-gray-600 mt-1">Track your performance metrics and insights</p>
+            </div>
+          </div>
+        </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {summaryCards.map((card) => (
-          <div key={card.label} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm font-medium">{card.label}</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">{card.value}</p>
-                <div className="flex items-center mt-2">
-                  <span className={`text-sm font-medium ${
-                    card.changeType === 'positive' ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {card.change}
-                  </span>
-                  <span className="text-gray-500 text-xs ml-1">vs last period</span>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {summaryCards.map((card, index) => (
+            <div 
+              key={card.label} 
+              className="group bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-sm border border-white/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-1"
+              style={{ animationDelay: `${index * 100}ms` }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-gray-500 text-sm font-medium mb-1">{card.label}</p>
+                  <p className="text-2xl font-bold text-gray-800 mb-3 group-hover:text-gray-900 transition-colors">
+                    {card.value}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${
+                      card.changeType === 'positive' 
+                        ? 'bg-emerald-100 text-emerald-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {card.changeType === 'positive' ? '↗' : '↘'} {card.change}
+                    </span>
+                    <span className="text-gray-500 text-xs">{card.description}</span>
+                  </div>
+                </div>
+                <div className={`p-3 rounded-xl bg-gradient-to-r ${card.color} shadow-lg group-hover:shadow-xl transition-shadow duration-300`}>
+                  <card.icon className="w-6 h-6 text-white" />
                 </div>
               </div>
-              <div className={`p-3 rounded-full ${card.color}`}>
-                <card.icon className="text-white text-xl" />
+            </div>
+          ))}
+        </div>
+
+        {/* Main Chart Section */}
+        <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-sm border border-white/50 mb-8">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Performance Trends</h2>
+              <p className="text-gray-600">Track your key metrics over time</p>
+            </div>
+            
+            <div className="flex flex-wrap gap-3">
+              {/* Timeframe Selector */}
+              <div className="flex bg-gray-100/80 backdrop-blur-sm rounded-xl p-1.5 border border-gray-200/50">
+                {['week', 'month'].map((timeframe) => (
+                  <button
+                    key={timeframe}
+                    onClick={() => setSelectedTimeframe(timeframe)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 capitalize ${
+                      selectedTimeframe === timeframe
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                    }`}
+                  >
+                    {timeframe}ly
+                  </button>
+                ))}
+              </div>
+
+              {/* Chart Type Selector */}
+              <div className="flex bg-gray-100/80 backdrop-blur-sm rounded-xl p-1.5 border border-gray-200/50">
+                {[
+                  { type: 'bar', icon: '📊' },
+                  { type: 'line', icon: '📈' },
+                  { type: 'area', icon: '📉' }
+                ].map(({ type, icon }) => (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedChart(type)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 capitalize flex items-center gap-2 ${
+                      selectedChart === type
+                        ? 'bg-white text-blue-600 shadow-sm'
+                        : 'text-gray-600 hover:text-gray-800 hover:bg-white/50'
+                    }`}
+                  >
+                    <span>{icon}</span>
+                    {type}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* Main Chart Section */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
-          <h2 className="text-xl font-semibold text-gray-800">Practice Trends</h2>
-          
-          <div className="flex gap-4">
-            {/* Timeframe Selector */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              <button
-                onClick={() => setSelectedTimeframe('week')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  selectedTimeframe === 'week'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Weekly
-              </button>
-              <button
-                onClick={() => setSelectedTimeframe('month')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  selectedTimeframe === 'month'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-              >
-                Monthly
-              </button>
-            </div>
-
-            {/* Chart Type Selector */}
-            <div className="flex bg-gray-100 rounded-lg p-1">
-              {(['bar', 'line', 'area'] as const).map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setSelectedChart(type)}
-                  className={`px-3 py-2 rounded-md text-sm font-medium transition-colors capitalize ${
-                    selectedChart === type
-                      ? 'bg-white text-blue-600 shadow-sm'
-                      : 'text-gray-600 hover:text-gray-800'
-                  }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>
+          <div className="bg-gradient-to-br from-gray-50/50 to-white rounded-xl p-4">
+            <ResponsiveContainer width="100%" height={400}>
+              {renderChart()}
+            </ResponsiveContainer>
           </div>
         </div>
 
-        <ResponsiveContainer width="100%" height={400}>
-          {renderChart()}
-        </ResponsiveContainer>
-      </div>
+        {/* Bottom Row - Additional Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Patient Satisfaction */}
+          <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-sm border border-white/50">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                <Award className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">Patient Satisfaction</h2>
+                <p className="text-gray-600 text-sm">Feedback distribution</p>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={280}>
+              <PieChart>
+                <Pie
+                  data={patientSatisfactionData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={90}
+                  innerRadius={40}
+                  paddingAngle={4}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  labelLine={false}
+                >
+                  {patientSatisfactionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.fill} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }} 
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
 
-      {/* Bottom Row - Pie Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Patient Satisfaction */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Patient Satisfaction</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={patientSatisfactionData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                outerRadius={100}
-                label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
+          {/* Performance Metrics */}
+          <div className="bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-sm border border-white/50">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-gray-800">Performance Overview</h2>
+                <p className="text-gray-600 text-sm">Key performance indicators</p>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={280}>
+              <RadialBarChart 
+                cx="50%" 
+                cy="50%" 
+                innerRadius="20%" 
+                outerRadius="80%" 
+                data={[
+                  { name: 'Completion Rate', value: metrics.completionRate, fill: '#4F46E5' },
+                  { name: 'Patient Satisfaction', value: 89, fill: '#10B981' },
+                  { name: 'Efficiency Score', value: 94, fill: '#F59E0B' },
+                ]}
               >
-                {patientSatisfactionData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+                <RadialBar dataKey="value" cornerRadius={10} />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }} 
+                />
+                <Legend />
+              </RadialBarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
 
-        {/* Performance Metrics */}
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Performance Overview</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <RadialBarChart cx="50%" cy="50%" innerRadius="10%" outerRadius="80%" data={[
-              { name: 'Appointments', value: metrics.completionRate, fill: '#4F46E5' },
-              { name: 'Prescriptions', value: 85, fill: '#10B981' },
-              { name: 'Patient Care', value: 92, fill: '#F59E0B' },
-            ]}>
-              <RadialBar dataKey="value" cornerRadius={10} fill="#8884d8" />
-              <Tooltip />
-              <Legend />
-            </RadialBarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="mt-8 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <h2 className="text-xl font-semibold mb-4 text-gray-800">Quick Actions</h2>
-        <div className="flex flex-wrap gap-4">
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            Schedule Appointment
-          </button>
-          <button className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            Write Prescription
-          </button>
-          <button className="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            View Patient Records
-          </button>
-          <button className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-            Generate Report
-          </button>
+        {/* Quick Actions */}
+        <div className="mt-8 bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-sm border border-white/50">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <Clock className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-800">Quick Actions</h2>
+              <p className="text-gray-600 text-sm">Frequently used actions</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: 'Schedule Appointment', color: 'from-blue-500 to-blue-600' },
+              { label: 'Write Prescription', color: 'from-emerald-500 to-emerald-600' },
+              { label: 'View Patient Records', color: 'from-purple-500 to-purple-600' },
+              { label: 'Generate Report', color: 'from-gray-500 to-gray-600' }
+            ].map((action, index) => (
+              <button 
+                key={action.label}
+                className={`bg-gradient-to-r ${action.color} hover:shadow-lg text-white px-6 py-4 rounded-xl font-medium transition-all duration-200 hover:-translate-y-0.5 text-sm`}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default DoctorAnalysis;
+export default ModernAnalyticsDashboard;

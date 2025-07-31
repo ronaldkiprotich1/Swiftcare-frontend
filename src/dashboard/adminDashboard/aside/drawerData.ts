@@ -32,12 +32,12 @@ export const adminDrawerData: DrawerData[] = [
         icon: FaUserMd,
         link: "doctors"
     },
-    // {
-    //     id: "appointments",
-    //     name: "Appointments",
-    //     icon: FiCalendar,
-    //     link: "appointments"
-    // },
+    {
+        id: "appointments",
+        name: "Appointments",
+        icon: FiCalendar,
+        link: "appointments"
+    },
     
     
     {

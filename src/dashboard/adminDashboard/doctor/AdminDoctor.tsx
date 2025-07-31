@@ -19,28 +19,49 @@ const AdminDoctors = () => {
   const [doctorToDelete, setDoctorToDelete] = useState<TDoctor | null>(null);
   const [doctorToBook, setDoctorToBook] = useState<TDoctor | null>(null);
 
-  const userID = useSelector((state: RootState) => state.user.user?.userID);
+  // Fixed: Use userId instead of userID
+  const userId = useSelector((state: RootState) => state.user.user?.userId);
+  const token = useSelector((state: RootState) => state.user.token);
 
-  const { data: doctorsData, isLoading, error, refetch } = doctorsAPI.useGetDoctorsQuery(undefined, {
+  const { 
+    data: doctorsData, 
+    isLoading, 
+    error, 
+    refetch,
+    isError,
+    isSuccess 
+  } = doctorsAPI.useGetDoctorsQuery(undefined, {
     refetchOnMountOrArgChange: true,
-    pollingInterval: 10000,
+    pollingInterval: 30000,
   });
 
-  // Debug: Log the error to see what's happening
-  console.log("Doctors API Error:", error);
+  // Enhanced debugging
+  console.log("=== DOCTORS API DEBUG ===");
+  console.log("Is Loading:", isLoading);
+  console.log("Is Error:", isError);
+  console.log("Is Success:", isSuccess);
+  console.log("Error:", error);
   console.log("Doctors Data:", doctorsData);
+  console.log("Token present:", !!token);
+  console.log("User ID:", userId);
 
   const handleSearch = () => {
     setSearchResults(null);
     if (searchSpecialization.trim()) {
-      // doctorsData is now directly an array, not wrapped in an object
-      const filtered = doctorsData?.filter((doc) =>
-        doc.specialization.toLowerCase().includes(searchSpecialization.toLowerCase())
+      if (!doctorsData || !Array.isArray(doctorsData)) {
+        toast.error("No doctors data available to search.");
+        return;
+      }
+      
+      const filtered = doctorsData.filter((doc) =>
+        doc.specialization?.toLowerCase().includes(searchSpecialization.toLowerCase())
       );
+      
       if (!filtered || filtered.length === 0) {
         toast.error("No doctors found for this specialization.");
       } else {
         setSearchResults(filtered);
+        toast.success(`Found ${filtered.length} doctor(s) for "${searchSpecialization}"`);
       }
     } else {
       toast.info("Enter a specialization to search.");
@@ -48,6 +69,7 @@ const AdminDoctors = () => {
   };
 
   const handleRetry = () => {
+    console.log("Retrying API call...");
     refetch();
     toast.info("Retrying to fetch doctors...");
   };
@@ -55,11 +77,25 @@ const AdminDoctors = () => {
   const renderDoctorRow = (doctor: TDoctor) => (
     <tr key={doctor.doctorId} className="hover:bg-gray-200 border-b border-gray-400">
       <td className="px-4 py-2 border-r border-gray-400 lg:text-base">{doctor.doctorId}</td>
-      <td className="px-4 py-2 border-r border-gray-400 lg:text-base">{doctor.firstName} {doctor.lastName}</td>
+      <td className="px-4 py-2 border-r border-gray-400 lg:text-base">
+        {doctor.firstName} {doctor.lastName}
+      </td>
       <td className="px-4 py-2 border-r border-gray-400 lg:text-base">{doctor.specialization}</td>
       <td className="px-4 py-2 border-r border-gray-400 lg:text-base">{doctor.contactPhone || "-"}</td>
       <td className="px-4 py-2 border-r border-gray-400 lg:text-base">
-        {doctor.availableDays ? JSON.parse(doctor.availableDays).join(", ") : "-"}
+        {doctor.availableDays ? (
+          typeof doctor.availableDays === 'string' 
+            ? (() => {
+                try {
+                  return JSON.parse(doctor.availableDays).join(", ");
+                } catch {
+                  return doctor.availableDays;
+                }
+              })()
+            : Array.isArray(doctor.availableDays) 
+              ? doctor.availableDays.join(", ")
+              : doctor.availableDays
+        ) : "-"}
       </td>
       <td className="px-4 py-2 border-r border-gray-400 lg:text-base">
         {doctor.consultationFee ? `KSh ${doctor.consultationFee}` : "-"}
@@ -98,13 +134,31 @@ const AdminDoctors = () => {
 
   return (
     <div className="w-full">
+      {/* Debug info in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="bg-blue-100 border border-blue-400 rounded p-4 mb-4">
+          <h4 className="font-bold text-blue-800">Debug Info:</h4>
+          <div className="text-sm text-blue-700">
+            <p>Loading: {isLoading.toString()}</p>
+            <p>Error: {isError.toString()}</p>
+            <p>Success: {isSuccess.toString()}</p>
+            <p>Data type: {Array.isArray(doctorsData) ? 'Array' : typeof doctorsData}</p>
+            <p>Data length: {Array.isArray(doctorsData) ? doctorsData.length : 'N/A'}</p>
+            <p>Token: {token ? 'Present' : 'Missing'}</p>
+            <p>API Base URL: {`${process.env.REACT_APP_API_DOMAIN || 'undefined'}/api/doctors`}</p>
+          </div>
+        </div>
+      )}
+
       <CreateDoctor refetch={refetch} />
       <UpdateDoctor doctor={selectedDoctor} refetch={refetch} />
       <DeleteDoctor doctor={doctorToDelete} refetch={refetch} />
+      
+      {/* Fixed: Remove prefillDoctorID and prefillUserID props */}
       <CreateAppointment
         refetch={refetch}
-        prefillDoctorID={doctorToBook?.doctorId} // Changed from doctorID to doctorId
-        prefillUserID={userID}
+        doctorId={doctorToBook?.doctorId}
+        userId={userId}
       />
 
       <div className="flex flex-col sm:flex-row justify-center gap-4 mb-6 mt-4">
@@ -127,6 +181,15 @@ const AdminDoctors = () => {
         <button className="btn btn-primary text-white" onClick={handleSearch}>
           Search
         </button>
+        
+        {searchResults && (
+          <button 
+            className="btn btn-outline" 
+            onClick={() => setSearchResults(null)}
+          >
+            Clear Search
+          </button>
+        )}
       </div>
 
       {isLoading && (
@@ -136,20 +199,25 @@ const AdminDoctors = () => {
         </div>
       )}
 
-      {error && (
+      {isError && (
         <div className="alert alert-error mb-4">
           <div className="flex flex-col">
             <span>Error fetching doctors. Please check your connection and try again.</span>
-            <div className="mt-2">
+            <div className="mt-2 flex gap-2">
               <button className="btn btn-sm btn-outline" onClick={handleRetry}>
                 Retry
               </button>
+              {!token && (
+                <div className="text-sm text-red-600">
+                  ⚠️ No authentication token found. Please log in again.
+                </div>
+              )}
             </div>
             {/* Show error details in development */}
             {process.env.NODE_ENV === 'development' && (
               <details className="mt-2">
                 <summary className="cursor-pointer text-sm">Error Details</summary>
-                <pre className="text-xs mt-1 bg-base-200 p-2 rounded">
+                <pre className="text-xs mt-1 bg-base-200 p-2 rounded overflow-auto">
                   {JSON.stringify(error, null, 2)}
                 </pre>
               </details>
@@ -158,7 +226,7 @@ const AdminDoctors = () => {
         </div>
       )}
 
-      {!isLoading && !error && (
+      {isSuccess && Array.isArray(doctorsData) && (
         <div className="overflow-x-auto">
           <table className="table table-xs">
             <thead>
@@ -173,15 +241,13 @@ const AdminDoctors = () => {
               </tr>
             </thead>
             <tbody>
-              {searchResults
-                ? searchResults.map(renderDoctorRow)
-                : doctorsData?.map(renderDoctorRow)}
+              {(searchResults || doctorsData).map(renderDoctorRow)}
             </tbody>
           </table>
         </div>
       )}
 
-      {!searchResults && !isLoading && !error && doctorsData?.length === 0 && (
+      {isSuccess && Array.isArray(doctorsData) && doctorsData.length === 0 && (
         <div className="text-center py-8">
           <p className="text-gray-500 mb-4">No Doctors Found.</p>
           <button
@@ -195,9 +261,10 @@ const AdminDoctors = () => {
         </div>
       )}
 
-      {!searchResults && !isLoading && !error && (doctorsData?.length ?? 0) > 0 && (
+      {isSuccess && Array.isArray(doctorsData) && doctorsData.length > 0 && (
         <div className="mt-4 text-center text-sm text-gray-500">
-          Showing {doctorsData?.length} doctor(s)
+          Showing {searchResults ? searchResults.length : doctorsData.length} doctor(s)
+          {searchResults && ` (filtered from ${doctorsData.length} total)`}
         </div>
       )}
     </div>

@@ -1,12 +1,17 @@
-import { useState } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
-import { FaEdit, FaPlus, FaCalendarCheck } from "react-icons/fa";
-import { MdDeleteForever } from "react-icons/md";
+import { FaEdit, FaPlus, FaCalendarCheck, FaSearch, FaTimes } from "react-icons/fa";
+import { MdDeleteForever, MdPayment, MdFilterList } from "react-icons/md";
+import { HiOutlineRefresh } from "react-icons/hi";
 import UpdateAppointment from "./UpdateAppointment";
 import DeleteAppointment from "./DeleteAppointment";
 import CreateAppointment from "./CreateAppointment";
 import CreatePayment from "../../adminDashboard/payments/CreatePayment";
-import { appointmentsAPI, type TAppointment } from "../../../features/appointments/appointmentsAPI";
+import { 
+  appointmentsAPI, 
+  type TAppointment, 
+  type TDetailedAppointment 
+} from "../../../features/appointments/appointmentsAPI";
 import { toast } from "sonner";
 import type { RootState } from "../../../app/store";
 
@@ -16,75 +21,133 @@ const UserAppointments = () => {
   const [paymentAppointment, setPaymentAppointment] = useState<TAppointment | null>(null);
 
   const [searchAppointmentID, setSearchAppointmentID] = useState("");
-  const [searchResult, setSearchResult] = useState<TAppointment | null>(null);
+  const [searchResult, setSearchResult] = useState<TDetailedAppointment | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Fixed: Changed userID to userId to match the actual property name in the user state
+  // Get user ID from Redux store
   const userId = useSelector((state: RootState) => state.user.user?.userId);
 
-  const [getAppointmentById] = appointmentsAPI.useLazyGetAppointmentByIdQuery();
+  // API hooks - fallback to basic appointment search if detailed fails
+  const [getDetailedAppointmentById] = appointmentsAPI.useLazyGetDetailedAppointmentByIdQuery();
+  const [getBasicAppointmentById] = appointmentsAPI.useLazyGetAppointmentByIdQuery();
 
+  // Try to use detailed appointments, fallback to basic appointments
   const {
-    data: appointmentsData,
-    isLoading: appointmentsLoading,
-    error: appointmentsError,
-    refetch,
-  } = appointmentsAPI.useGetAppointmentsByUserIdQuery(userId ?? 0, {
+    data: detailedAppointmentsData,
+    isLoading: detailedLoading,
+    error: detailedError,
+    refetch: refetchDetailed,
+  } = appointmentsAPI.useGetDetailedAppointmentsByUserIdQuery(userId ?? 0, {
     skip: !userId,
     refetchOnMountOrArgChange: true,
-    pollingInterval: 30000, // Increased from 10s to 30s for better performance
+    pollingInterval: 60000,
     refetchOnFocus: true,
     refetchOnReconnect: true,
   });
 
-  const handleEdit = (appointment: TAppointment) => {
+  // Fallback to basic appointments if detailed endpoint fails
+  const {
+    data: basicAppointmentsData,
+    isLoading: basicLoading,
+    error: basicError,
+    refetch: refetchBasic,
+  } = appointmentsAPI.useGetAppointmentsByUserIdQuery(userId ?? 0, {
+    skip: !userId || (!detailedError && !detailedAppointmentsData),
+    refetchOnMountOrArgChange: true,
+    pollingInterval: 60000,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
+  });
+
+  // Determine which data to use
+  const appointmentsData = detailedAppointmentsData || basicAppointmentsData;
+  const appointmentsLoading = detailedLoading || basicLoading;
+  const appointmentsError = detailedError && basicError;
+  const refetch = detailedAppointmentsData ? refetchDetailed : refetchBasic;
+
+  // Event handlers
+  const handleEdit = useCallback((appointment: TAppointment) => {
     setSelectedAppointment(appointment);
     (document.getElementById("update_appointment_modal") as HTMLDialogElement)?.showModal();
-  };
+  }, []);
 
-  const handleMakePayment = (appointment: TAppointment) => {
+  const handleMakePayment = useCallback((appointment: TAppointment) => {
     setPaymentAppointment(appointment);
     (document.getElementById("create_payment_modal") as HTMLDialogElement)?.showModal();
-  };
+  }, []);
 
-  const handleCreateNew = () => {
+  const handleCreateNew = useCallback(() => {
     (document.getElementById("create_appointment_modal") as HTMLDialogElement)?.showModal();
-  };
+  }, []);
 
-  const handlePaymentCreated = () => {
-    // Refetch appointments to get updated data
+  const handlePaymentCreated = useCallback(() => {
     refetch();
-    // Clear search results to show updated list
     setSearchResult(null);
     setSearchAppointmentID("");
-    // Show success message
     toast.success("Payment created successfully!");
-  };
+  }, [refetch]);
 
-  const handleSearch = async () => {
-    setSearchResult(null);
-
+  const handleSearch = useCallback(async () => {
     if (!searchAppointmentID.trim()) {
       toast.info("Enter an Appointment ID to search.");
       return;
     }
 
+    setIsSearching(true);
     try {
-      const result = await getAppointmentById(parseInt(searchAppointmentID)).unwrap();
-      if (!result.appointment) {
+      let result;
+      let appointment;
+      
+      // Try detailed first, fallback to basic
+      try {
+        result = await getDetailedAppointmentById(parseInt(searchAppointmentID)).unwrap();
+        appointment = result.appointment;
+      } catch (detailedErr) {
+        console.log("Detailed search failed, trying basic search...");
+        const basicResult = await getBasicAppointmentById(parseInt(searchAppointmentID)).unwrap();
+        appointment = basicResult.appointment;
+      }
+
+      if (!appointment) {
         toast.error("Appointment not found.");
-      } else if (result.appointment.userID !== userId) {
+        setSearchResult(null);
+      } else if (appointment.userID !== userId) {
         toast.error("You can only view your own appointments.");
+        setSearchResult(null);
       } else {
-        setSearchResult(result.appointment);
+        // Convert basic appointment to detailed format if needed
+        const detailedAppointment: TDetailedAppointment = {
+          ...appointment,
+          patient: undefined,
+          doctor: undefined,
+        };
+        setSearchResult(detailedAppointment);
+        toast.success("Appointment found!");
       }
     } catch (err) {
-      console.error(err);
-      toast.error("Appointment not found.");
+      console.error("Search error:", err);
+      toast.error("Appointment not found or an error occurred.");
+      setSearchResult(null);
+    } finally {
+      setIsSearching(false);
     }
-  };
+  }, [searchAppointmentID, getDetailedAppointmentById, getBasicAppointmentById, userId]);
 
-  const renderStatusBadge = (status: string) => {
+  const handleClearFilters = useCallback(() => {
+    setSearchResult(null);
+    setSearchAppointmentID("");
+    setStatusFilter("all");
+    toast.info("Filters cleared");
+  }, []);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+    toast.info("Appointments refreshed");
+  }, [refetch]);
+
+  // Utility functions
+  const renderStatusBadge = useCallback((status: string) => {
     const statusStyles = {
       Confirmed: "badge-success bg-green-500 text-white",
       Pending: "badge-warning bg-yellow-500 text-white",
@@ -97,31 +160,49 @@ const UserAppointments = () => {
         <span className="text-sm font-medium">{status}</span>
       </span>
     );
-  };
+  }, []);
 
-  const formatDate = (dateString: string) => {
+  const formatDate = useCallback((dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
-  };
+  }, []);
 
-  const formatTime = (timeString: string) => {
+  const formatTime = useCallback((timeString: string) => {
     return new Date(`2000-01-01T${timeString}`).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: true
     });
-  };
+  }, []);
 
-  const renderAppointmentRow = (appointment: TAppointment) => (
+  const getDoctorName = useCallback((appointment: TDetailedAppointment | TAppointment) => {
+    if ('doctor' in appointment && appointment.doctor) {
+      return `Dr. ${appointment.doctor.name} ${appointment.doctor.lastName}`;
+    }
+    return `Doctor ID: ${appointment.doctorID}`;
+  }, []);
+
+  const getDoctorSpecialization = useCallback((appointment: TDetailedAppointment | TAppointment) => {
+    if ('doctor' in appointment && appointment.doctor) {
+      return appointment.doctor.specialization;
+    }
+    return "N/A";
+  }, []);
+
+  // Render functions
+  const renderAppointmentRow = useCallback((appointment: TDetailedAppointment | TAppointment) => (
     <tr key={appointment.appointmentID} className="hover:bg-gray-50 border-b border-gray-200">
       <td className="px-4 py-3 border-r border-gray-200 font-medium text-gray-900">
         #{appointment.appointmentID}
       </td>
-      <td className="px-4 py-3 border-r border-gray-200 text-gray-700">
-        Dr. {appointment.doctorID}
+      <td className="px-4 py-3 border-r border-gray-200">
+        <div className="flex flex-col">
+          <span className="text-gray-900 font-medium">{getDoctorName(appointment)}</span>
+          <span className="text-sm text-gray-500">{getDoctorSpecialization(appointment)}</span>
+        </div>
       </td>
       <td className="px-4 py-3 border-r border-gray-200 text-gray-700">
         {formatDate(appointment.appointmentDate)}
@@ -138,43 +219,82 @@ const UserAppointments = () => {
       <td className="px-4 py-3">
         <div className="flex gap-2 flex-wrap">
           <button
-            className="btn btn-sm bg-blue-500 hover:bg-blue-600 text-white border-none"
+            className="btn btn-sm bg-blue-500 hover:bg-blue-600 text-white border-none tooltip"
             onClick={() => handleEdit(appointment)}
             title="Edit Appointment"
+            data-tip="Edit"
           >
             <FaEdit size={14} />
           </button>
           <button
-            className="btn btn-sm bg-red-500 hover:bg-red-600 text-white border-none"
+            className="btn btn-sm bg-red-500 hover:bg-red-600 text-white border-none tooltip"
             onClick={() => {
               setAppointmentToDelete(appointment);
               (document.getElementById("delete_appointment_modal") as HTMLDialogElement)?.showModal();
             }}
             title="Delete Appointment"
+            data-tip="Delete"
           >
             <MdDeleteForever size={16} />
           </button>
-          <button
-            className="btn btn-sm bg-green-600 hover:bg-green-700 text-white border-none"
-            onClick={() => handleMakePayment(appointment)}
-            title="Make Payment"
-          >
-            Pay
-          </button>
+          {appointment.appointmentStatus !== "Completed" && appointment.totalAmount && appointment.totalAmount > 0 && (
+            <button
+              className="btn btn-sm bg-green-600 hover:bg-green-700 text-white border-none tooltip"
+              onClick={() => handleMakePayment(appointment)}
+              title="Make Payment"
+              data-tip="Pay"
+            >
+              <MdPayment size={14} />
+              Pay
+            </button>
+          )}
         </div>
       </td>
     </tr>
-  );
+  ), [handleEdit, handleMakePayment, formatDate, formatTime, getDoctorName, getDoctorSpecialization, renderStatusBadge]);
 
-  // Filter appointments based on status
-  const filteredAppointments = searchResult 
-    ? [searchResult] 
-    : appointmentsData?.appointments?.filter(appointment => 
-        statusFilter === "all" || appointment.appointmentStatus === statusFilter
-      ) || [];
+  // Computed values - handle both detailed and basic appointments
+  const appointments = useMemo(() => {
+    if (detailedAppointmentsData?.data) {
+      return detailedAppointmentsData.data;
+    }
+    if (basicAppointmentsData?.appointments) {
+      // Convert basic appointments to detailed format
+      return basicAppointmentsData.appointments.map(apt => ({
+        ...apt,
+        patient: undefined,
+        doctor: undefined,
+      }));
+    }
+    return [];
+  }, [detailedAppointmentsData, basicAppointmentsData]);
+
+  const filteredAppointments = useMemo(() => {
+    if (searchResult) {
+      return [searchResult];
+    }
+    
+    return appointments.filter(appointment => 
+      statusFilter === "all" || appointment.appointmentStatus === statusFilter
+    );
+  }, [searchResult, appointments, statusFilter]);
+
+  const appointmentStats = useMemo(() => {
+    if (!appointments.length) {
+      return { total: 0, confirmed: 0, pending: 0, completed: 0, cancelled: 0 };
+    }
+
+    return {
+      total: appointments.length,
+      confirmed: appointments.filter(a => a.appointmentStatus === "Confirmed").length,
+      pending: appointments.filter(a => a.appointmentStatus === "Pending").length,
+      completed: appointments.filter(a => a.appointmentStatus === "Completed").length,
+      cancelled: appointments.filter(a => a.appointmentStatus === "Cancelled").length,
+    };
+  }, [appointments]);
 
   return (
-    <div className="p-6 bg-white min-h-screen">
+    <div className="p-6 bg-gray-50 min-h-screen">
       {/* Modal Components */}
       <CreateAppointment refetch={refetch} />
       <CreatePayment
@@ -190,23 +310,35 @@ const UserAppointments = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800 mb-2">My Appointments</h1>
-            <p className="text-gray-600">Manage your medical appointments</p>
+            <p className="text-gray-600">Manage your medical appointments and schedule new ones</p>
           </div>
           
-          <button
-            className="btn bg-indigo-600 hover:bg-indigo-700 text-white border-none"
-            onClick={handleCreateNew}
-          >
-            <FaPlus size={16} />
-            Book New Appointment
-          </button>
+          <div className="flex gap-3">
+            <button
+              className="btn bg-gray-500 hover:bg-gray-600 text-white border-none"
+              onClick={handleRefresh}
+              disabled={appointmentsLoading}
+              title="Refresh appointments"
+            >
+              <HiOutlineRefresh size={16} className={appointmentsLoading ? "animate-spin" : ""} />
+              Refresh
+            </button>
+            <button
+              className="btn bg-indigo-600 hover:bg-indigo-700 text-white border-none"
+              onClick={handleCreateNew}
+            >
+              <FaPlus size={16} />
+              Book New Appointment
+            </button>
+          </div>
         </div>
 
         {/* Search and Filter Section */}
-        <div className="bg-gray-50 p-4 rounded-lg border">
+        <div className="bg-white p-6 rounded-lg border shadow-sm">
           <div className="flex flex-col lg:flex-row gap-4 items-end">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                <FaSearch className="inline mr-2" />
                 Search by Appointment ID
               </label>
               <div className="flex gap-2">
@@ -215,13 +347,20 @@ const UserAppointments = () => {
                   value={searchAppointmentID}
                   onChange={(e) => setSearchAppointmentID(e.target.value)}
                   placeholder="Enter appointment ID..."
-                  className="input input-bordered flex-1 bg-white"
+                  className="input input-bordered flex-1 bg-white focus:border-indigo-500"
                   onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  disabled={isSearching}
                 />
                 <button 
                   className="btn bg-blue-600 hover:bg-blue-700 text-white border-none"
                   onClick={handleSearch}
+                  disabled={isSearching || !searchAppointmentID.trim()}
                 >
+                  {isSearching ? (
+                    <span className="loading loading-spinner loading-sm"></span>
+                  ) : (
+                    <FaSearch size={16} />
+                  )}
                   Search
                 </button>
               </div>
@@ -229,12 +368,13 @@ const UserAppointments = () => {
             
             <div className="w-full lg:w-auto">
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                <MdFilterList className="inline mr-2" />
                 Filter by Status
               </label>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="select select-bordered bg-white w-full lg:w-auto"
+                className="select select-bordered bg-white w-full lg:w-auto focus:border-indigo-500"
               >
                 <option value="all">All Status</option>
                 <option value="Pending">Pending</option>
@@ -247,12 +387,9 @@ const UserAppointments = () => {
             {(searchResult || statusFilter !== "all") && (
               <button 
                 className="btn bg-gray-500 hover:bg-gray-600 text-white border-none"
-                onClick={() => {
-                  setSearchResult(null);
-                  setSearchAppointmentID("");
-                  setStatusFilter("all");
-                }}
+                onClick={handleClearFilters}
               >
+                <FaTimes size={16} />
                 Clear Filters
               </button>
             )}
@@ -262,7 +399,7 @@ const UserAppointments = () => {
 
       {/* Loading State */}
       {appointmentsLoading && (
-        <div className="text-center py-12">
+        <div className="text-center py-12 bg-white rounded-lg shadow-sm">
           <div className="loading loading-spinner loading-lg text-indigo-600"></div>
           <p className="mt-4 text-gray-600 text-lg">Loading your appointments...</p>
         </div>
@@ -280,22 +417,28 @@ const UserAppointments = () => {
             <div className="ml-3">
               <p className="text-red-800 font-medium">Error loading appointments</p>
               <p className="text-red-700">Please try refreshing the page or contact support if the problem persists.</p>
+              <button 
+                className="mt-2 btn btn-sm bg-red-600 hover:bg-red-700 text-white border-none"
+                onClick={handleRefresh}
+              >
+                Try Again
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Results Table */}
+      {/* Results Section */}
       {!appointmentsLoading && !appointmentsError && (
         <>
           {/* Stats Cards */}
-          {!searchResult && appointmentsData?.appointments && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          {!searchResult && appointments.length > 0 && (
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg text-white">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm opacity-90">Total</p>
-                    <p className="text-2xl font-bold">{appointmentsData.appointments.length}</p>
+                    <p className="text-2xl font-bold">{appointmentStats.total}</p>
                   </div>
                   <FaCalendarCheck size={24} className="opacity-80" />
                 </div>
@@ -304,9 +447,7 @@ const UserAppointments = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm opacity-90">Confirmed</p>
-                    <p className="text-2xl font-bold">
-                      {appointmentsData.appointments.filter(a => a.appointmentStatus === "Confirmed").length}
-                    </p>
+                    <p className="text-2xl font-bold">{appointmentStats.confirmed}</p>
                   </div>
                   <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                     <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -317,9 +458,7 @@ const UserAppointments = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm opacity-90">Pending</p>
-                    <p className="text-2xl font-bold">
-                      {appointmentsData.appointments.filter(a => a.appointmentStatus === "Pending").length}
-                    </p>
+                    <p className="text-2xl font-bold">{appointmentStats.pending}</p>
                   </div>
                   <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                     <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -330,9 +469,18 @@ const UserAppointments = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm opacity-90">Completed</p>
-                    <p className="text-2xl font-bold">
-                      {appointmentsData.appointments.filter(a => a.appointmentStatus === "Completed").length}
-                    </p>
+                    <p className="text-2xl font-bold">{appointmentStats.completed}</p>
+                  </div>
+                  <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                    <div className="w-3 h-3 bg-white rounded-full"></div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gradient-to-r from-red-500 to-red-600 p-4 rounded-lg text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm opacity-90">Cancelled</p>
+                    <p className="text-2xl font-bold">{appointmentStats.cancelled}</p>
                   </div>
                   <div className="w-6 h-6 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
                     <div className="w-3 h-3 bg-white rounded-full"></div>
@@ -342,6 +490,7 @@ const UserAppointments = () => {
             </div>
           )}
 
+          {/* Appointments Table */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="table w-full">
@@ -369,7 +518,7 @@ const UserAppointments = () => {
       {!appointmentsLoading && 
        !appointmentsError &&
        !searchResult && 
-       (!appointmentsData?.appointments || appointmentsData.appointments.length === 0) && (
+       (!appointments || appointments.length === 0) && (
         <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="text-gray-400 mb-4">
             <FaCalendarCheck size={64} className="mx-auto" />
@@ -390,8 +539,8 @@ const UserAppointments = () => {
       {!appointmentsLoading && 
        !appointmentsError &&
        !searchResult && 
-       appointmentsData?.appointments && 
-       appointmentsData.appointments.length > 0 && 
+       appointments && 
+       appointments.length > 0 && 
        filteredAppointments.length === 0 && 
        statusFilter !== "all" && (
         <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
@@ -407,10 +556,11 @@ const UserAppointments = () => {
       {!appointmentsLoading && 
        !appointmentsError &&
        searchResult === null && 
-       searchAppointmentID && (
+       searchAppointmentID && 
+       !isSearching && (
         <div className="text-center py-8 bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="text-gray-400 mb-4">
-            <FaCalendarCheck size={48} className="mx-auto" />
+            <FaSearch size={48} className="mx-auto" />
           </div>
           <h3 className="text-xl font-semibold text-gray-600 mb-2">Appointment Not Found</h3>
           <p className="text-gray-500">No appointment found with ID: <strong>#{searchAppointmentID}</strong></p>

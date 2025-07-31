@@ -1,12 +1,18 @@
 // src/pages/LandingPage.tsx
+import { useState } from "react";
+import ChatWidget from "../components/ChatWidget"; // adjust path as needed
 import Hero from "../components/home/Hero";
 import Services from "../components/home/Services";
 import Testimonials from "../components/about/Testimonials";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Sparkles, ArrowRightCircle, MessageCircle } from "lucide-react";
+import { Sparkles, ArrowRightCircle, MessageCircle, X } from "lucide-react";
 
 const LandingPage = () => {
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const toggleChat = () => setChatOpen(!chatOpen);
+
   return (
     <div className="bg-white text-gray-900 relative overflow-hidden">
       {/* Hero Section */}
@@ -93,12 +99,20 @@ const LandingPage = () => {
       </section>
 
       {/* Floating Chat Support Button */}
-      <Link
-        to="/support"
+      <button
+        onClick={toggleChat}
         className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg z-50"
+        aria-label="Toggle Chat"
       >
-        <MessageCircle className="w-6 h-6" />
-      </Link>
+        {chatOpen ? <X className="w-6 h-6" /> : <MessageCircle className="w-6 h-6" />}
+      </button>
+
+      {/* Chat Widget Panel */}
+      {chatOpen && (
+        <div className="fixed bottom-20 right-6 z-50 shadow-2xl w-full max-w-sm rounded-lg overflow-hidden">
+          <ChatWidget />
+        </div>
+      )}
     </div>
   );
 };
